@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Avatar conversationnel</title>
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; background: black; overflow: hidden; }
+    #avatarVideo {
+      width: 100vw;
+      height: 100vh;
+      object-fit: contain;
+    }
+    #status {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      color: white;
+      font-family: sans-serif;
+      font-size: 14px;
+      background: rgba(0,0,0,0.5);
+      padding: 6px 12px;
+      border-radius: 6px;
+    }
+    #audioUnlock {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 16px 32px;
+      font-size: 18px;
+      background: #0d6efd;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      z-index: 100;
+      font-family: sans-serif;
+    }
+    #audioUnlock.hidden { display: none; }
+  </style>
+</head>
+<body>
+  <video id="avatarVideo" autoplay playsinline></video>
+  <div id="status">Connexion…</div>
+  <button id="audioUnlock">🔊 Cliquez pour activer l'audio</button>
+
+  <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
+  <script>
+    // ⚠️ Remplacez cette ligne par votre token frais
+    const LIVEKIT_URL = "wss://test-vjsyazm0.livekit.cloud";
+    const LIVEKIT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJBUElkZHNMckpXRWtZUDUiLCJzdWIiOiJzcGVjdGF0ZXVyIiwiZXhwIjoxNzkxMTA4MDUxLCJuYmYiOjE3OTEwMjE2NTEsImlhdCI6MTc5MTAyMTY1MSwiaWRlbnRpdHkiOiJzcGVjdGF0ZXVyIiwibmFtZSI6InNwZWN0YXRldXIiLCJ2aWRlbyI6eyJyb29tSm9pbiI6dHJ1ZSwicm9vbSI6Im1hLXNhbGxlLXRlc3QifX0.64RirXCrzXps6l7eYV4tyKqAD5fvg6lJAeXNwvhEVEo";
+
+    const statusEl = document.getElementById("status");
+    const videoEl = document.getElementById("avatarVideo");
+    const audioBtn = document.getElementById("audioUnlock");
+
+    const room = new LivekitClient.Room();
+
+    room.on(LivekitClient.RoomEvent.TrackSubscribed, (track) => {
+      if (track.kind === "video") {
+        track.attach(videoEl);
+        statusEl.textContent = "Avatar connecté ✅";
+      }
+      if (track.kind === "audio") {
+        track.attach();
+      }
+    });
+
+    room.on(LivekitClient.RoomEvent.TrackUnsubscribed, (track) => {
+     if (track.kind === "video") {
+        statusEl.textContent = "Avatar déconnecté — relancez l'agent et le dispatch";
+     }
+    });
+
+    room.on(LivekitClient.RoomEvent.Disconnected, () => {
+      statusEl.textContent = "Déconnecté ❌ — rechargez ou relancez l'agent";
+    });
+
+    audioBtn.addEventListener("click", async () => {
+      await room.startAudio();
+      audioBtn.classList.add("hidden");
+      statusEl.textContent = "Audio activé ✅";
+    });
+
+    (async () => {
+      try {
+        await room.connect(LIVEKIT_URL, LIVEKIT_TOKEN);
+        statusEl.textContent = "Connecté — en attente de l'avatar…";
+        await room.localParticipant.setMicrophoneEnabled(true);
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Erreur : " + err.message;
+      }
+    })();
+  </script>
+</body>
+</html>
