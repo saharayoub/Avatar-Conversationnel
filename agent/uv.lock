@@ -17,7 +17,7 @@ name = "agent-starter-python"
 version = "1.0.0"
 source = { editable = "." }
 dependencies = [
-    { name = "livekit-agents", extra = ["azure", "bithuman", "groq", "silero"] },
+    { name = "livekit-agents", extra = ["azure", "bithuman", "groq", "silero", "simli"] },
     { name = "livekit-plugins-ai-coustics" },
     { name = "python-dotenv" },
 ]
@@ -31,7 +31,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "livekit-agents", extras = ["azure", "bithuman", "groq", "silero"], specifier = "~=1.5" },
+    { name = "livekit-agents", extras = ["azure", "bithuman", "groq", "silero", "simli"], specifier = "~=1.5" },
     { name = "livekit-plugins-ai-coustics", specifier = "~=0.3" },
     { name = "python-dotenv" },
 ]
@@ -1169,6 +1169,9 @@ openai = [
 silero = [
     { name = "livekit-plugins-silero" },
 ]
+simli = [
+    { name = "livekit-plugins-simli" },
+]
 
 [[package]]
 name = "livekit-api"
@@ -1341,6 +1344,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/2e/75/130611b462ca3898dd4d64e1d680328e6235c2170b30b9e1f7ef365f571e/livekit_plugins_silero-1.8.3.tar.gz", hash = "sha256:52c08a198937bae75fbf5557f26a4924d07603d5fca1d95a16eb11aed876dd3b", size = 1955421, upload-time = "2026-09-23T19:06:17.425Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/12/a6/04e5302025d1eb7f3f77b5917d425cf9d55b2a3e2770706d6756351313ab/livekit_plugins_silero-1.8.3-py3-none-any.whl", hash = "sha256:23da0d2d4efa7ae3ffcc0afa8637ffb58e6bdc65283cc8b246040d403ddbd7ff", size = 3903146, upload-time = "2026-09-23T19:06:15.628Z" },
+]
+
+[[package]]
+name = "livekit-plugins-simli"
+version = "1.8.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "livekit-agents" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/75/a0/c1055ad3ea2787c0f1d8d38b0babc3e6b973036afb7ec5b9ad6df0ef439c/livekit_plugins_simli-1.8.3.tar.gz", hash = "sha256:11e3df10a6744acd3bedaa07bb14b0fb8ad54502212a1a7053ccc15b21a65fb3", size = 5198, upload-time = "2026-09-23T19:06:11.805Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/38/91/5231649f9e638d000ac047ddc470265d52ddb638320f0867e578cb9035cc/livekit_plugins_simli-1.8.3-py3-none-any.whl", hash = "sha256:5074979a8d9b54073ff7982ce29fe1e3fdf85f1fcd52ffb9436aeefdeac4fea5", size = 5278, upload-time = "2026-09-23T19:06:10.811Z" },
 ]
 
 [[package]]

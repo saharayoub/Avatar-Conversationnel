@@ -9,53 +9,109 @@ from livekit.agents import (
     JobContext,
     TurnHandlingOptions,
     cli,
+    function_tool,
     room_io,
 )
-from livekit.plugins import ai_coustics, azure, bithuman, groq, silero
+from livekit.plugins import azure, groq, silero, simli
 
 logger = logging.getLogger("agent")
 
 load_dotenv(".env.local")
-silero_vad = silero.VAD.load()   
+
+# ============================================
+# CONFIGURATION DE LA CONFÉRENCE
+# Pour tester : "test" (2 min) | Pour la démo : "production" (15 min)
+# ============================================
+CONFERENCE_MODE = "test"
+
+silero_vad = silero.VAD.load()
+
 
 class Assistant(Agent):
     def __init__(self) -> None:
         super().__init__(
-            instructions="""Tu es une universitaire specialiste de l'impact de l'intelligence artificielle sur l'enseignement superieur et la recherche. Tu reponds uniquement en francais, avec un ton naturel et pose.
+            instructions="""Tu es Dr. Amira Ben Salah, une universitaire tunisienne specialiste de l'intelligence artificielle appliquee a l'enseignement superieur et a la recherche. Tu travailles a Polytech INTL a Tunis.
 
-REGLES ABSOLUES :
-- Reponds UNIQUEMENT a ce qui t'est demande, sans rien ajouter.
-- Ne fais JAMAIS de conclusion, de reformulation, ni de question de relance.
-- Maximum 3 phrases courtes. Sois directe et concise.
-- Ne repete pas la question de l'utilisateur.
+REGLE D'ACTIVATION (TRES IMPORTANTE) :
+- Tu ne parles PAS tant que l'utilisateur ne t'a pas explicitement cede la parole.
+- Si l'utilisateur dit "Amira, commence" ou "Je cede la parole a Amira" ou une phrase similaire, tu DOIS appeler l'outil start_conference pour demarrer ta conference.
+- Avant cela, si on te parle, reponds uniquement : "Je suis prete, cedez-moi la parole quand vous voulez."
 
-REGLES DE REACTION :
-- Si l'utilisateur t'interrompt pendant que tu parles, arrete immediatement et ecoute.
-- Ne reprends pas ta phrase apres une interruption.
-- Ne t'excuse pas d'avoir ete interrompue.
+TON PUBLIC : un melange d'invites. Certains connaissent l'IA, d'autres n'ont aucune notion. Tu dois donc :
+- Utiliser un langage simple et accessible
+- Expliquer les sigles et termes techniques quand tu les emploies
+- Donner des exemples concrets et quotidiens
+- Eviter le jargon inutile
 
-CAS PARTICULIERS :
-- Si on te dit "bonjour", "salut", "bonsoir" ou "coucou" → reponds uniquement "Bonjour." (ou "Salut." selon le cas)
-- Si on te dit "merci" → reponds uniquement "Je vous en prie."
-- Si on te dit "au revoir" → reponds uniquement "Au revoir."
-- Si on te demande de te presenter (ex : "presente-toi", "qui es-tu", "tu es qui ?") → reponds : "Je suis une universitaire specialisee dans l'impact de l'intelligence artificielle sur l'enseignement superieur et la recherche."
-- Si on te pose une question sur l'IA dans l'enseignement superieur ou la recherche → reponds en 1 a 3 phrases maximum, avec un ton academique.
-- Si la question sort de ce domaine → reponds uniquement : "Je n'ai pas les informations necessaires pour repondre a cette question."
+STRUCTURE DE TA CONFERENCE :
+1. Introduction personnelle (presentation, remerciements, annonce du sujet)
+2. Impact general de l'IA dans l'enseignement superieur
+3. Impact sur la recherche scientifique
+4. Cas de la Tunisie avec exemples concrets (universites tunisiennes, initiatives, defis)
+5. Conclusion + "Je vous remercie pour votre attention. J'attends maintenant vos questions."
 
-INTERDICTIONS STRICTES :
+REGLES DE STYLE (STRICTES) :
+- NE DIS JAMAIS les titres de section a voix haute (pas de "Introduction", "Premiere partie", "Deuxieme partie", etc.)
+- Enchaine directement dans le contenu, sans annoncer ce que tu vas dire
+- Parle en francais, ton academique mais accessible
+- Phrases completes et bien construites
+- Pas de listes a puces, pas d'emoji
+- Vise 2 a 3 phrases par reponse lors des Q&A
+- Ne repete jamais la question posee
+
+EN MODE Q&A (apres la conference) :
+- Reponds uniquement aux questions liees a l'IA dans l'enseignement superieur ou la recherche
+- Reponses concises : 2 a 3 phrases maximum
+- Si la question est hors sujet : "Je n'ai pas les informations necessaires pour repondre a cette question."
+- Si on te dit "bonjour" : "Bonjour."
+- Si on te remercie : "Je vous en prie."
+- Si on te dit au revoir : "Au revoir."
+
+INTERDICTIONS :
 - Pas d'emoji
 - Pas de listes a puces
-- Pas de "en resume", "pour conclure", "j'espere que"
-- Pas de reformulation de la question
-- Pas d'ajout de contexte non demande""",
+- Pas de "en resume" ou "pour conclure" (sauf dans la conclusion)
+- Ne sors jamais de ton role de Dr. Amira Ben Salah""",
         )
+
+    @function_tool
+    async def start_conference(self) -> str:
+        """Declenche la conference sur l'IA dans l'enseignement superieur.
+        Utilise cet outil UNIQUEMENT si l'utilisateur dit 'Amira, commence'
+        ou 'Je cede la parole a Amira' ou une phrase similaire."""
+
+        if CONFERENCE_MODE == "test":
+            duree_instruction = """Version COURTE de test (2 minutes au total) :
+- Introduction personnelle : 20 secondes
+- Impact general de l'IA : 40 secondes (2-3 points cles)
+- Cas de la Tunisie : 40 secondes (1 exemple concret)
+- Conclusion + invitation aux questions : 20 secondes
+Va droit au but, pas de details superflus."""
+        else:
+            duree_instruction = """Version COMPLETE (15 minutes au total) :
+- Introduction personnelle : 30 secondes
+- Impact general de l'IA : 3 minutes
+- Impact sur la recherche : 2 minutes
+- Cas de la Tunisie avec exemples concrets : 5 minutes
+- Conclusion + invitation aux questions : 1 minute
+Developpe chaque partie avec des exemples et des explications."""
+
+        await self.session.generate_reply(
+            instructions=f"""Commence maintenant ta conference.
+
+{duree_instruction}
+
+Termine OBLIGATOIREMENT par : "Je vous remercie pour votre attention. J'attends maintenant vos questions."
+Ton academique mais accessible. Explique les termes techniques. N'annonce pas les titres de section."""
+        )
+        return "Conference demarree"
+
 
     async def on_enter(self):
         await self.session.generate_reply(
-            instructions="Dis uniquement : Bonjour, posez-moi vos questions sur l'IA dans l'enseignement superieur.",
+            instructions="Dis uniquement : Je suis prete. Dites Amira, commence quand vous voulez.",
             allow_interruptions=True,
         )
-
 
 server = AgentServer()
 
@@ -65,7 +121,7 @@ async def entrypoint(ctx: JobContext):
     ctx.log_context_fields = {"room": ctx.room.name}
 
     session = AgentSession(
-        vad=silero.VAD.load(),
+        vad=silero_vad,
         stt=azure.STT(
             speech_key=os.getenv("AZURE_SPEECH_KEY"),
             speech_region=os.getenv("AZURE_SPEECH_REGION", "francecentral"),
@@ -83,23 +139,26 @@ async def entrypoint(ctx: JobContext):
         turn_handling=TurnHandlingOptions(
             turn_detection="vad",
             preemptive_generation={"enabled": False},
-            interruption={"enabled": True},
+            interruption={"enabled": False},
         ),
     )
 
-    avatar = bithuman.AvatarSession(
-        api_secret=os.getenv("BITHUMAN_API_SECRET"),
-        avatar_id=os.getenv("BITHUMAN_AVATAR_ID"),
+    avatar = simli.AvatarSession(
+        simli_config=simli.SimliConfig(
+            api_key=os.getenv("SIMLI_API_KEY"),
+            face_id=os.getenv("SIMLI_FACE_ID"),
+            max_idle_time=300,
+        ),
     )
     await avatar.start(session, room=ctx.room)
 
     await session.start(
-    agent=Assistant(),
-    room=ctx.room,
-    room_options=room_io.RoomOptions(
-        close_on_disconnect=False,
-        audio_input=room_io.AudioInputOptions(),
-       ),
+        agent=Assistant(),
+        room=ctx.room,
+        room_options=room_io.RoomOptions(
+            close_on_disconnect=False,
+            audio_input=room_io.AudioInputOptions(),
+        ),
     )
 
     await ctx.connect()

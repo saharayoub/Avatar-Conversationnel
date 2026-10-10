@@ -1,1 +1,33 @@
 .env .env.* !.env.example .DS_Store __pycache__ .idea KMS .venv .vscode *.egg-info .pytest_cache .ruff_cache  # Claude Code .claude/settings.local.json .claude/worktrees/  # OpenAI Codex .codex/config.local.toml  # Gemini CLI .gemini/history/ .gemini/tmp/ .gemini/google_accounts.json .gemini/installation_id .gemini/oauth_creds.json  # Cursor .cursor/chat/ .cursor/rules/*.local.mdc  # GitHub CLI .github/personal-instructions.md agent/
+# Environnements virtuels Python
+.venv/
+venv/
+**/.venv/
+**/venv/
+
+# Fichiers de config locaux (clés API - NE JAMAIS committer)
+.env
+.env.local
+.env.*.local
+
+# Cache Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Logs
+*.log
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Backups locaux
+*.backup
+*.backup_avant_correction
+*.backup2
+*.backup3
+
+# Métadonnées Windows
+*:Zone.Identifier
