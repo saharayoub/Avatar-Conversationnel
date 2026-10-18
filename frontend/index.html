@@ -9,56 +9,42 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
+    
+    /* Fond dégradé doux */
     html, body {
       margin: 0;
       padding: 0;
       min-height: 100vh;
-      background: #fafafa;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
       color: #1f2937;
     }
 
-    /* ===== En-tête ===== */
+    /* ===== En-tête translucide ===== */
     header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 24px 48px;
-      background: #ffffff;
-      border-bottom: 1px solid #e5e7eb;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(229, 231, 235, 0.6);
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
-    header .brand {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-    header .brand img {
-      height: 48px;
-      width: auto;
-    }
-    header .title-block {
-      text-align: right;
-    }
+    header .brand { display: flex; align-items: center; gap: 16px; }
+    header .brand img { height: 48px; width: auto; }
+    header .title-block { text-align: right; }
     header h1 {
-      margin: 0;
-      font-size: 20px;
-      font-weight: 600;
-      color: #1f2937;
-      letter-spacing: -0.3px;
+      margin: 0; font-size: 20px; font-weight: 600; color: #1f2937; letter-spacing: -0.3px;
     }
     header .subtitle {
-      margin: 4px 0 0 0;
-      font-size: 13px;
-      font-weight: 400;
-      color: #6b7280;
+      margin: 4px 0 0 0; font-size: 13px; font-weight: 400; color: #6b7280;
     }
     header .accent-line {
-      display: inline-block;
-      width: 40px;
-      height: 3px;
-      background: #e63030;
-      border-radius: 2px;
-      margin-top: 8px;
+      display: inline-block; width: 40px; height: 3px; background: #e63030;
+      border-radius: 2px; margin-top: 8px;
     }
 
     /* ===== Corps principal ===== */
@@ -71,15 +57,18 @@
       padding: 48px 24px;
     }
 
+    /* Carte vidéo avec ombre plus douce */
     .video-card {
       position: relative;
       width: 100%;
       max-width: 720px;
-      background: #ffffff;
-      border-radius: 16px;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08), 0 2px 10px rgba(0, 0, 0, 0.03);
       padding: 24px;
       overflow: hidden;
+      transition: all 0.3s ease;
     }
 
     #avatarVideo {
@@ -111,22 +100,19 @@
       transition: background 0.2s ease, transform 0.1s ease;
       box-shadow: 0 4px 12px rgba(230, 48, 48, 0.25);
     }
-    #audioUnlock:hover {
-      background: #c42626;
-    }
-    #audioUnlock:active {
-      transform: translate(-50%, -50%) scale(0.98);
-    }
+    #audioUnlock:hover { background: #c42626; }
+    #audioUnlock:active { transform: translate(-50%, -50%) scale(0.98); }
     #audioUnlock.hidden { display: none; }
 
-        #micToggle {
-      margin-top: 20px;
-      padding: 12px 24px;
+    /* ===== Bouton micro (avec animation) ===== */
+    #micToggle {
+      margin-top: 24px;
+      padding: 14px 32px;
       font-size: 15px;
       font-weight: 500;
       font-family: inherit;
       border: none;
-      border-radius: 8px;
+      border-radius: 50px;
       cursor: pointer;
       transition: all 0.2s ease;
     }
@@ -134,31 +120,40 @@
     #micToggle.mic-active {
       background: #10b981;
       color: white;
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+      animation: pulse-ring 2s infinite;
     }
-
-    #micToggle.mic-active:hover {
-      background: #059669;
-    }
+    #micToggle.mic-active:hover { background: #059669; }
 
     #micToggle.mic-muted {
       background: #6b7280;
       color: white;
       box-shadow: 0 4px 12px rgba(107, 114, 128, 0.25);
     }
+    #micToggle.mic-muted:hover { background: #4b5563; }
 
-    #micToggle.mic-muted:hover {
-      background: #4b5563;
+    /* Animation du bouton vert */
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+      70% { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
     }
 
-    /* ===== Statut ===== */
+    /* ===== Statut sous forme de badge ===== */
     #status {
       margin-top: 20px;
       font-size: 13px;
+      font-weight: 500;
       color: #6b7280;
-      font-weight: 400;
+      background: #ffffff;
+      padding: 8px 16px;
+      border-radius: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      border: 1px solid #e5e7eb;
       text-align: center;
-      min-height: 18px;
+      min-height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
 
     /* ===== Pied de page ===== */
@@ -167,8 +162,8 @@
       text-align: center;
       font-size: 12px;
       color: #9ca3af;
-      border-top: 1px solid #e5e7eb;
-      background: #ffffff;
+      border-top: 1px solid rgba(229, 231, 235, 0.6);
+      background: rgba(255, 255, 255, 0.5);
     }
 
     /* ===== Responsive ===== */
@@ -177,7 +172,7 @@
       header .title-block { text-align: center; }
       header h1 { font-size: 17px; }
       main { padding: 24px 16px; }
-      .video-card { padding: 16px; border-radius: 12px; }
+      .video-card { padding: 16px; border-radius: 16px; }
       #avatarVideo { max-height: 50vh; }
     }
   </style>
@@ -198,10 +193,12 @@
   <main>
     <div class="video-card">
       <video id="avatarVideo" autoplay playsinline></video>
-      <button id="audioUnlock" style="display: none";>🔊 Cliquez pour activer l'audio</button>
+      <button id="audioUnlock" style="display: none;">🔊 Cliquez pour activer l'audio</button>
     </div>
-    <div id="status">Connexion…</div>
+    
     <button id="micToggle" class="mic-muted">🔇 Micro coupé</button>
+    
+    <div id="status">Connexion…</div>
   </main>
 
   <footer>
@@ -212,7 +209,7 @@
   <script>
     // ⚠️ Remplacez cette ligne par votre token frais
     const LIVEKIT_URL = "wss://test-vjsyazm0.livekit.cloud";
-    const LIVEKIT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJBUElkZHNMckpXRWtZUDUiLCJzdWIiOiJzcGVjdGF0ZXVyIiwiZXhwIjoxNzkxNzA2OTA4LCJuYmYiOjE3OTE2MjA1MDgsImlhdCI6MTc5MTYyMDUwOCwiaWRlbnRpdHkiOiJzcGVjdGF0ZXVyIiwibmFtZSI6InNwZWN0YXRldXIiLCJ2aWRlbyI6eyJyb29tSm9pbiI6dHJ1ZSwicm9vbSI6Im1hLXNhbGxlLXRlc3QifX0.m4wuEspGvM4zb-cIqf0PCjm1H_urLzeOnS_WKg0ZGno";
+    const LIVEKIT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJBUElkZHNMckpXRWtZUDUiLCJzdWIiOiJzcGVjdGF0ZXVyIiwiZXhwIjoxNzkyNDEzNDg0LCJuYmYiOjE3OTIzMjcwODQsImlhdCI6MTc5MjMyNzA4NCwiaWRlbnRpdHkiOiJzcGVjdGF0ZXVyIiwibmFtZSI6InNwZWN0YXRldXIiLCJ2aWRlbyI6eyJyb29tSm9pbiI6dHJ1ZSwicm9vbSI6Im1hLXNhbGxlLXRlc3QifX0.UsSeaYTmpMMn7EyYhsWSyZLPU8YVue7hd2Bg2RJ-qhE";
 
     const statusEl = document.getElementById("status");
     const videoEl = document.getElementById("avatarVideo");
@@ -242,7 +239,7 @@
 
      // Le bouton audio devient inutile (on garde juste le HTML caché)
     // audioBtn n'est plus utilisé
-    
+
         // ===== Bouton micro (toggle) =====
     const micToggle = document.getElementById('micToggle');
     let micEnabled = false;      // État actuel : micro coupé au démarrage
