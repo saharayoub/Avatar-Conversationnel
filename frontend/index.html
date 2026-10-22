@@ -3,118 +3,49 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Assistant IA — Enseignement Supérieur | Polytech INTL</title>
+  <title>Assistant IA — Plein Écran</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; }
-    
-    /* Fond dégradé doux */
-    html, body {
-      margin: 0;
-      padding: 0;
-      min-height: 100vh;
-      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* Le fond de la page devient sombre pour faire ressortir la vidéo */
+    body {
+      background-color: #0f172a;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden; /* Empêche les barres de défilement */
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      color: #1f2937;
     }
 
-    /* ===== En-tête translucide ===== */
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 24px 48px;
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid rgba(229, 231, 235, 0.6);
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-    header .brand { display: flex; align-items: center; gap: 16px; }
-    header .brand img { height: 48px; width: auto; }
-    header .title-block { text-align: right; }
-    header h1 {
-      margin: 0; font-size: 20px; font-weight: 600; color: #1f2937; letter-spacing: -0.3px;
-    }
-    header .subtitle {
-      margin: 4px 0 0 0; font-size: 13px; font-weight: 400; color: #6b7280;
-    }
-    header .accent-line {
-      display: inline-block; width: 40px; height: 3px; background: #e63030;
-      border-radius: 2px; margin-top: 8px;
-    }
-
-    /* ===== Corps principal ===== */
-    main {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: calc(100vh - 200px);
-      padding: 48px 24px;
-    }
-
-    /* Carte vidéo avec ombre plus douce */
-    .video-card {
-      position: relative;
-      width: 100%;
-      max-width: 720px;
-      background: rgba(255, 255, 255, 0.95);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      border-radius: 20px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08), 0 2px 10px rgba(0, 0, 0, 0.03);
-      padding: 24px;
-      overflow: hidden;
-      transition: all 0.3s ease;
-    }
-
+    /* L'avatar prend tout l'écran, sans bordure */
     #avatarVideo {
-      width: 100%;
-      aspect-ratio: 9 / 16;
-      max-height: 60vh;
-      object-fit: contain;
-      border-radius: 12px;
-      background: #f3f4f6;
+      width: 100vw;
+      height: 100vh;
+      object-fit: contain; /* Affiche l'avatar en entier sans le couper */
       display: block;
     }
 
-    /* ===== Bouton audio ===== */
-    #audioUnlock {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      padding: 14px 28px;
-      font-size: 15px;
-      font-weight: 500;
-      font-family: inherit;
-      background: #e63030;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      z-index: 100;
-      transition: background 0.2s ease, transform 0.1s ease;
-      box-shadow: 0 4px 12px rgba(230, 48, 48, 0.25);
-    }
-    #audioUnlock:hover { background: #c42626; }
-    #audioUnlock:active { transform: translate(-50%, -50%) scale(0.98); }
-    #audioUnlock.hidden { display: none; }
+    /* ===== Bouton audio (caché) ===== */
+    #audioUnlock { display: none; }
 
-    /* ===== Bouton micro (avec animation) ===== */
+    /* ===== Bouton micro flottant ===== */
     #micToggle {
-      margin-top: 24px;
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
       padding: 14px 32px;
       font-size: 15px;
-      font-weight: 500;
+      font-weight: 600;
       font-family: inherit;
       border: none;
       border-radius: 50px;
       cursor: pointer;
       transition: all 0.2s ease;
+      z-index: 10;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
     }
 
     #micToggle.mic-active {
@@ -127,89 +58,50 @@
     #micToggle.mic-muted {
       background: #6b7280;
       color: white;
-      box-shadow: 0 4px 12px rgba(107, 114, 128, 0.25);
     }
     #micToggle.mic-muted:hover { background: #4b5563; }
 
-    /* Animation du bouton vert */
     @keyframes pulse-ring {
       0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
       70% { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
       100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
     }
 
-    /* ===== Statut sous forme de badge ===== */
+    /* ===== Statut flottant en haut ===== */
     #status {
-      margin-top: 20px;
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
       font-size: 13px;
       font-weight: 500;
-      color: #6b7280;
-      background: #ffffff;
-      padding: 8px 16px;
-      border-radius: 20px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-      border: 1px solid #e5e7eb;
+      color: #e5e7eb;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 20px;
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(5px);
       text-align: center;
-      min-height: 34px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* ===== Pied de page ===== */
-    footer {
-      padding: 20px 48px;
-      text-align: center;
-      font-size: 12px;
-      color: #9ca3af;
-      border-top: 1px solid rgba(229, 231, 235, 0.6);
-      background: rgba(255, 255, 255, 0.5);
-    }
-
-    /* ===== Responsive ===== */
-    @media (max-width: 640px) {
-      header { padding: 16px 20px; flex-direction: column; gap: 12px; }
-      header .title-block { text-align: center; }
-      header h1 { font-size: 17px; }
-      main { padding: 24px 16px; }
-      .video-card { padding: 16px; border-radius: 16px; }
-      #avatarVideo { max-height: 50vh; }
+      z-index: 10;
+      transition: opacity 0.3s ease;
     }
   </style>
 </head>
 <body>
 
-  <header>
-    <div class="brand">
-      <img src="logo.png" alt="Polytech INTL">
-    </div>
-    <div class="title-block">
-      <h1>Assistant IA</h1>
-      <p class="subtitle">Enseignement Supérieur et Recherche</p>
-      <div class="accent-line"></div>
-    </div>
-  </header>
-
-  <main>
-    <div class="video-card">
-      <video id="avatarVideo" autoplay playsinline></video>
-      <button id="audioUnlock" style="display: none;">🔊 Cliquez pour activer l'audio</button>
-    </div>
-    
-    <button id="micToggle" class="mic-muted">🔇 Micro coupé</button>
-    
-    <div id="status">Connexion…</div>
-  </main>
-
-  <footer>
-    Polytech INTL — Projet Ingenieur Big Data &amp; IA
-  </footer>
+  <!-- La vidéo prend tout l'écran -->
+  <video id="avatarVideo" autoplay playsinline></video>
+  
+  <!-- Éléments flottants -->
+  <div id="status">Connexion…</div>
+  <button id="micToggle" class="mic-muted">🔇 Micro coupé</button>
+  <button id="audioUnlock">🔊 Audio</button>
 
   <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
   <script>
     // ⚠️ Remplacez cette ligne par votre token frais
     const LIVEKIT_URL = "wss://test-vjsyazm0.livekit.cloud";
-    const LIVEKIT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJBUElkZHNMckpXRWtZUDUiLCJzdWIiOiJzcGVjdGF0ZXVyIiwiZXhwIjoxNzkyNDEzNDg0LCJuYmYiOjE3OTIzMjcwODQsImlhdCI6MTc5MjMyNzA4NCwiaWRlbnRpdHkiOiJzcGVjdGF0ZXVyIiwibmFtZSI6InNwZWN0YXRldXIiLCJ2aWRlbyI6eyJyb29tSm9pbiI6dHJ1ZSwicm9vbSI6Im1hLXNhbGxlLXRlc3QifX0.UsSeaYTmpMMn7EyYhsWSyZLPU8YVue7hd2Bg2RJ-qhE";
+    const LIVEKIT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJBUElkZHNMckpXRWtZUDUiLCJzdWIiOiJzcGVjdGF0ZXVyIiwiZXhwIjoxNzkyNzQ2NTUwLCJuYmYiOjE3OTI2NjAxNTAsImlhdCI6MTc5MjY2MDE1MCwiaWRlbnRpdHkiOiJzcGVjdGF0ZXVyIiwibmFtZSI6InNwZWN0YXRldXIiLCJ2aWRlbyI6eyJyb29tSm9pbiI6dHJ1ZSwicm9vbSI6Im1hLXNhbGxlLXRlc3QifX0.6cD2-a7bOFQ049aJehZRGA7Ktj80aoOWWxIvBfWcU5s";
 
     const statusEl = document.getElementById("status");
     const videoEl = document.getElementById("avatarVideo");
@@ -221,6 +113,8 @@
       if (track.kind === "video") {
         track.attach(videoEl);
         statusEl.textContent = "Avatar connecté ✅";
+        // On cache le statut après 3 secondes pour faire plus propre
+        setTimeout(() => { statusEl.style.opacity = "0"; }, 3000);
       }
       if (track.kind === "audio") {
         track.attach();
@@ -230,11 +124,13 @@
     room.on(LivekitClient.RoomEvent.TrackUnsubscribed, (track) => {
       if (track.kind === "video") {
         statusEl.textContent = "Avatar déconnecté — relancez l'agent et le dispatch";
+        statusEl.style.opacity = "1";
       }
     });
 
     room.on(LivekitClient.RoomEvent.Disconnected, () => {
       statusEl.textContent = "Déconnecté ❌ — rechargez ou relancez l'agent";
+      statusEl.style.opacity = "1";
     });
 
      // Le bouton audio devient inutile (on garde juste le HTML caché)

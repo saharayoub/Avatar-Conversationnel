@@ -147,7 +147,8 @@ async def entrypoint(ctx: JobContext):
         simli_config=simli.SimliConfig(
             api_key=os.getenv("SIMLI_API_KEY"),
             face_id=os.getenv("SIMLI_FACE_ID"),
-            max_idle_time=300,
+            max_idle_time=3600,
+            max_session_length=7200,
         ),
     )
     await avatar.start(session, room=ctx.room)
@@ -158,6 +159,7 @@ async def entrypoint(ctx: JobContext):
         room_options=room_io.RoomOptions(
             close_on_disconnect=False,
             audio_input=room_io.AudioInputOptions(),
+            audio_output=False,
         ),
     )
 
