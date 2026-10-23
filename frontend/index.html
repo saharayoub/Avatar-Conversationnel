@@ -12,7 +12,7 @@
 
     /* Le fond de la page devient sombre pour faire ressortir la vidéo */
     body {
-      background-color: #0f172a;
+      background-color: #ffffff;
       width: 100vw;
       height: 100vh;
       overflow: hidden; /* Empêche les barres de défilement */
@@ -70,7 +70,7 @@
     /* ===== Statut flottant en haut ===== */
     #status {
       position: fixed;
-      top: 20px;
+      top: 30px;
       left: 50%;
       transform: translateX(-50%);
       font-size: 13px;
@@ -85,9 +85,25 @@
       z-index: 10;
       transition: opacity 0.3s ease;
     }
+
+        /* ===== Logo de la fac ===== */
+    .logo-fac {
+      position: absolute; /* Permet de le placer par-dessus la vidéo */
+      top: 30px;          /* Distance du haut */
+      left: 30px;         /* Distance de la gauche */
+      height: 50px;       /* Taille du logo (ajustable) */
+      width: auto;
+      z-index: 100;       /* Pour s'assurer qu'il est bien au premier plan */
+      /* Optionnel : une petite ombre si le logo est clair */
+      filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.1)); 
+    }
+
   </style>
 </head>
 <body>
+
+  <!-- Le logo qui flotte en haut à gauche -->
+  <img src="logofac.jpg" alt="Polytech INTL" class="logo-fac">
 
   <!-- La vidéo prend tout l'écran -->
   <video id="avatarVideo" autoplay playsinline></video>
@@ -101,7 +117,7 @@
   <script>
     // ⚠️ Remplacez cette ligne par votre token frais
     const LIVEKIT_URL = "wss://test-vjsyazm0.livekit.cloud";
-    const LIVEKIT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJBUElkZHNMckpXRWtZUDUiLCJzdWIiOiJzcGVjdGF0ZXVyIiwiZXhwIjoxNzkyNzQ2NTUwLCJuYmYiOjE3OTI2NjAxNTAsImlhdCI6MTc5MjY2MDE1MCwiaWRlbnRpdHkiOiJzcGVjdGF0ZXVyIiwibmFtZSI6InNwZWN0YXRldXIiLCJ2aWRlbyI6eyJyb29tSm9pbiI6dHJ1ZSwicm9vbSI6Im1hLXNhbGxlLXRlc3QifX0.6cD2-a7bOFQ049aJehZRGA7Ktj80aoOWWxIvBfWcU5s";
+    const LIVEKIT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJBUElkZHNMckpXRWtZUDUiLCJzdWIiOiJzcGVjdGF0ZXVyIiwiZXhwIjoxNzkyODM5MTAzLCJuYmYiOjE3OTI3NTI3MDMsImlhdCI6MTc5Mjc1MjcwMywiaWRlbnRpdHkiOiJzcGVjdGF0ZXVyIiwibmFtZSI6InNwZWN0YXRldXIiLCJ2aWRlbyI6eyJyb29tSm9pbiI6dHJ1ZSwicm9vbSI6Im1hLXNhbGxlLXRlc3QifX0.hHgZzKlA7u1v0uYLqWY8DPLsqbjsF7cF1t3OI7WLfqs";
 
     const statusEl = document.getElementById("status");
     const videoEl = document.getElementById("avatarVideo");

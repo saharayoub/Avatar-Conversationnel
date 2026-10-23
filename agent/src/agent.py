@@ -12,7 +12,7 @@ from livekit.agents import (
     function_tool,
     room_io,
 )
-from livekit.plugins import azure, groq, silero, simli
+from livekit.plugins import azure, groq, silero, bithuman
 
 logger = logging.getLogger("agent")
 
@@ -143,13 +143,9 @@ async def entrypoint(ctx: JobContext):
         ),
     )
 
-    avatar = simli.AvatarSession(
-        simli_config=simli.SimliConfig(
-            api_key=os.getenv("SIMLI_API_KEY"),
-            face_id=os.getenv("SIMLI_FACE_ID"),
-            max_idle_time=3600,
-            max_session_length=7200,
-        ),
+    avatar = bithuman.AvatarSession(
+      api_secret=os.getenv("BITHUMAN_API_SECRET"),
+      avatar_id=os.getenv("BITHUMAN_AVATAR_ID"),
     )
     await avatar.start(session, room=ctx.room)
 
