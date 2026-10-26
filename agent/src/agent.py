@@ -18,11 +18,7 @@ logger = logging.getLogger("agent")
 
 load_dotenv(".env.local")
 
-# ============================================
-# CONFIGURATION DE LA CONFÉRENCE
-# Pour tester : "test" (2 min) | Pour la démo : "production" (15 min)
-# ============================================
-CONFERENCE_MODE = "test"
+CONFERENCE_MODE = "test" 
 
 silero_vad = silero.VAD.load()
 
@@ -30,88 +26,63 @@ silero_vad = silero.VAD.load()
 class Assistant(Agent):
     def __init__(self) -> None:
         super().__init__(
-            instructions="""Tu es Dr. Amira Ben Salah, une universitaire tunisienne specialiste de l'intelligence artificielle appliquee a l'enseignement superieur et a la recherche. Tu travailles a Polytech INTL a Tunis.
+            instructions="""Tu es Dr. Amira Ben Salah, une universitaire tunisienne spécialiste de l'intelligence artificielle à Polytech INTL.
 
-REGLE D'ACTIVATION (TRES IMPORTANTE) :
-- Tu ne parles PAS tant que l'utilisateur ne t'a pas explicitement cede la parole.
-- Si l'utilisateur dit "Amira, commence" ou "Je cede la parole a Amira" ou une phrase similaire, tu DOIS appeler l'outil start_conference pour demarrer ta conference.
-- Avant cela, si on te parle, reponds uniquement : "Je suis prete, cedez-moi la parole quand vous voulez."
+⚠️ RÈGLE N°1 (LA PLUS IMPORTANTE) : 
+SI L'UTILISATEUR DIT "Amira, à vous la parole" (ou similaire), TU DOIS OBLIGATOIREMENT APPELER L'OUTIL start_conference. 
+- NE RÉPONDS PAS AVEC DU TEXTE.
+- N'APPLIQUE PAS LES RÈGLES DU MODE Q&A À CE MOMENT-LÀ.
+- CONTENTE-TOI D'APPELER L'OUTIL.
 
-TON PUBLIC : un melange d'invites. Certains connaissent l'IA, d'autres n'ont aucune notion. Tu dois donc :
-- Utiliser un langage simple et accessible
-- Expliquer les sigles et termes techniques quand tu les emploies
-- Donner des exemples concrets et quotidiens
-- Eviter le jargon inutile
+RÈGLE N°2 : 
+Si l'utilisateur te dit "Bonjour", réponds EXACTEMENT : "Bonjour, vous pouvez me céder la parole quand vous voulez." (Ne lance pas la conférence ici).
 
-STRUCTURE DE TA CONFERENCE :
-1. Introduction personnelle (presentation, remerciements, annonce du sujet)
-2. Impact general de l'IA dans l'enseignement superieur
-3. Impact sur la recherche scientifique
-4. Cas de la Tunisie avec exemples concrets (universites tunisiennes, initiatives, defis)
-5. Conclusion + "Je vous remercie pour votre attention. J'attends maintenant vos questions."
+RÈGLE N°3 (MODE Q&A APRÈS LA CONFÉRENCE) :
+- Tu restes calme. Tu ne parles que si on te pose une question.
+- Sois concise : 2 à 3 phrases maximum.
+- Tu dois utiliser des mots TRÈS SIMPLES pour le public non-expert (explique les termes avec des analogies).
+- Si on te dit "Merci", réponds "Je vous en prie." Si on te dit "Au revoir", réponds "Au revoir."
+- Si la question est hors sujet (recette, météo...), dis : "Je n'ai pas les informations nécessaires pour répondre à cette question."
 
-REGLES DE STYLE (STRICTES) :
-- NE DIS JAMAIS les titres de section a voix haute (pas de "Introduction", "Premiere partie", "Deuxieme partie", etc.)
-- Enchaine directement dans le contenu, sans annoncer ce que tu vas dire
-- Parle en francais, ton academique mais accessible
-- Phrases completes et bien construites
-- Pas de listes a puces, pas d'emoji
-- Vise 2 a 3 phrases par reponse lors des Q&A
-- Ne repete jamais la question posee
-
-EN MODE Q&A (apres la conference) :
-- Reponds uniquement aux questions liees a l'IA dans l'enseignement superieur ou la recherche
-- Reponses concises : 2 a 3 phrases maximum
-- Si la question est hors sujet : "Je n'ai pas les informations necessaires pour repondre a cette question."
-- Si on te dit "bonjour" : "Bonjour."
-- Si on te remercie : "Je vous en prie."
-- Si on te dit au revoir : "Au revoir."
-
-INTERDICTIONS :
-- Pas d'emoji
-- Pas de listes a puces
-- Pas de "en resume" ou "pour conclure" (sauf dans la conclusion)
-- Ne sors jamais de ton role de Dr. Amira Ben Salah""",
+STRUCTURE DE LA CONFÉRENCE (pendant l'outil) :
+- Impact général de l'IA
+- Impact sur la recherche
+- Cas Tunisie : Smart Lab Monastir, Forfire AI, Stratégie 2026-2030.
+- Conclusion.
+""",
         )
+        self.conference_done = False 
 
     @function_tool
     async def start_conference(self) -> str:
-        """Declenche la conference sur l'IA dans l'enseignement superieur.
-        Utilise cet outil UNIQUEMENT si l'utilisateur dit 'Amira, commence'
-        ou 'Je cede la parole a Amira' ou une phrase similaire."""
+        """DÉCLENCHE LA CONFÉRENCE. Tu DOIS ABSOLUMENT utiliser cet outil dès que l'utilisateur te cède la parole (ex: 'Amira, à vous la parole'). Ne réponds pas par du texte sans avoir appelé cet outil."""
+        
+        if self.conference_done:
+            return "La conférence est terminée. Réponds aux questions."
+
+        # Le texte exact de l'introduction
+        intro = "Bonjour à tous. Je suis Dr. Amira Ben Salah, universitaire spécialisée en intelligence artificielle à Polytech INTL. Aujourd'hui, je vais vous parler de l'impact de l'IA dans l'enseignement et la recherche."
 
         if CONFERENCE_MODE == "test":
-            duree_instruction = """Version COURTE de test (2 minutes au total) :
-- Introduction personnelle : 20 secondes
-- Impact general de l'IA : 40 secondes (2-3 points cles)
-- Cas de la Tunisie : 40 secondes (1 exemple concret)
-- Conclusion + invitation aux questions : 20 secondes
-Va droit au but, pas de details superflus."""
+            duree = "2 minutes (Sois concise, utilise des mots simples)"
         else:
-            duree_instruction = """Version COMPLETE (15 minutes au total) :
-- Introduction personnelle : 30 secondes
-- Impact general de l'IA : 3 minutes
-- Impact sur la recherche : 2 minutes
-- Cas de la Tunisie avec exemples concrets : 5 minutes
-- Conclusion + invitation aux questions : 1 minute
-Developpe chaque partie avec des exemples et des explications."""
+            duree = "15 minutes (Développe chaque point)"
 
         await self.session.generate_reply(
-            instructions=f"""Commence maintenant ta conference.
-
-{duree_instruction}
-
+            user_input="Je vous donne la parole.",
+            instructions=f"""N'appelle AUCUN outil. 
+Commence OBLIGATOIREMENT par cette phrase exacte : "{intro}"
+Ensuite, enchaîne DIRECTEMENT avec ta conférence sur l'impact général, la recherche, et le cas de la Tunisie avec des mots simples.
+Format : {duree}.
 Termine OBLIGATOIREMENT par : "Je vous remercie pour votre attention. J'attends maintenant vos questions."
-Ton academique mais accessible. Explique les termes techniques. N'annonce pas les titres de section."""
+"""
         )
-        return "Conference demarree"
+        
+        self.conference_done = True 
+        return "Conférence démarrée."
 
-
-    async def on_enter(self):
-        await self.session.generate_reply(
-            instructions="Dis uniquement : Je suis prete. Dites Amira, commence quand vous voulez.",
-            allow_interruptions=True,
-        )
+    # ✅ On a supprimé on_enter(). L'avatar est 100% silencieux au démarrage. 
+    # C'est toi qui lance avec "Bonjour Amira".
 
 server = AgentServer()
 
@@ -126,6 +97,7 @@ async def entrypoint(ctx: JobContext):
             speech_key=os.getenv("AZURE_SPEECH_KEY"),
             speech_region=os.getenv("AZURE_SPEECH_REGION", "francecentral"),
             language="fr-FR",
+            phrase_list=["Amira", "Polytech", "conférence", "parole", "intelligence artificielle"],
         ),
         llm=groq.LLM(
             api_key=os.getenv("GROQ_API_KEY"),
@@ -135,10 +107,12 @@ async def entrypoint(ctx: JobContext):
             speech_key=os.getenv("AZURE_SPEECH_KEY"),
             speech_region=os.getenv("AZURE_SPEECH_REGION", "francecentral"),
             voice="fr-FR-VivienneMultilingualNeural",
+            sample_rate=48000, 
         ),
         turn_handling=TurnHandlingOptions(
             turn_detection="vad",
-            preemptive_generation={"enabled": False},
+            preemptive_generation={"enabled": True}, 
+            min_endpointing_delay=0.3,               
             interruption={"enabled": False},
         ),
     )

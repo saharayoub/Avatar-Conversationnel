@@ -3,39 +3,93 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Assistant IA — Plein Écran</title>
+  <title>Assistant IA — Polytech INTL</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* Le fond de la page devient sombre pour faire ressortir la vidéo */
+    /* La page prend exactement la taille de l'écran, sans scroll */
     body {
-      background-color: #ffffff;
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden; /* Empêche les barres de défilement */
+      background-color: #f3f4f6;
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      height: 100vh; /* Force la hauteur à 100% de l'écran */
+      overflow: hidden; /* Empêche le défilement */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between; /* Répartit l'espace : haut, milieu, bas */
+      padding: 15px; /* Marge globale réduite */
     }
 
-    /* L'avatar prend tout l'écran, sans bordure */
+    /* ===== En-tête avec le Logo ===== */
+    header {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #9ca3af;
+      margin-bottom: 15px;
+      flex-shrink: 0; /* Empêche l'en-tête de s'écraser */
+    }
+
+    .logo-fac {
+      height: 85px; /* Légèrement réduit pour gagner de la place */
+      width: auto;
+    }
+
+    /* ===== Conteneur de l'avatar (le cadre) ===== */
+    .video-container {
+      width: 100%;
+      max-width: 1200px;
+      flex-grow: 1; /* Prend tout l'espace disponible au centre */
+      max-height: 72vh; /* Ne dépassera jamais 72% de la hauteur de l'écran */
+      aspect-ratio: 16 / 9; /* Format paysage */
+      background-color: #e5e7eb;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      position: relative;
+      border: 1px solid #d1d5db;
+      margin-bottom: 15px;
+    }
+
     #avatarVideo {
-      width: 100vw;
-      height: 100vh;
-      object-fit: contain; /* Affiche l'avatar en entier sans le couper */
+      width: 100%;
+      height: 100%;
+      object-fit: cover; /* Remplit bien le cadre */
       display: block;
+    }
+
+    /* ===== Statut (dans le cadre) ===== */
+    #status {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 13px;
+      font-weight: 500;
+      color: #e5e7eb;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 20px;
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(5px);
+      text-align: center;
+      z-index: 10;
+      transition: opacity 0.3s ease;
     }
 
     /* ===== Bouton audio (caché) ===== */
     #audioUnlock { display: none; }
 
-    /* ===== Bouton micro flottant ===== */
+    /* ===== Bouton micro (sous le cadre) ===== */
     #micToggle {
-      position: fixed;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
+      margin-top: 5px;
+      margin-bottom: 10px;
       padding: 14px 32px;
       font-size: 15px;
       font-weight: 600;
@@ -44,8 +98,8 @@
       border-radius: 50px;
       cursor: pointer;
       transition: all 0.2s ease;
-      z-index: 10;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      flex-shrink: 0; /* Empêche le bouton de s'écraser */
     }
 
     #micToggle.mic-active {
@@ -66,58 +120,30 @@
       70% { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
       100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
     }
-
-    /* ===== Statut flottant en haut ===== */
-    #status {
-      position: fixed;
-      top: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 13px;
-      font-weight: 500;
-      color: #e5e7eb;
-      background: rgba(0, 0, 0, 0.6);
-      padding: 8px 20px;
-      border-radius: 30px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(5px);
-      text-align: center;
-      z-index: 10;
-      transition: opacity 0.3s ease;
-    }
-
-        /* ===== Logo de la fac ===== */
-    .logo-fac {
-      position: absolute; /* Permet de le placer par-dessus la vidéo */
-      top: 30px;          /* Distance du haut */
-      left: 30px;         /* Distance de la gauche */
-      height: 50px;       /* Taille du logo (ajustable) */
-      width: auto;
-      z-index: 100;       /* Pour s'assurer qu'il est bien au premier plan */
-      /* Optionnel : une petite ombre si le logo est clair */
-      filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.1)); 
-    }
-
   </style>
 </head>
 <body>
 
-  <!-- Le logo qui flotte en haut à gauche -->
-  <img src="logofac.jpg" alt="Polytech INTL" class="logo-fac">
+  <!-- 1. Le Logo tout en haut -->
+  <header>
+    <img src="logofac1.png" alt="Polytech INTL" class="logo-fac">
+  </header>
 
-  <!-- La vidéo prend tout l'écran -->
-  <video id="avatarVideo" autoplay playsinline></video>
-  
-  <!-- Éléments flottants -->
-  <div id="status">Connexion…</div>
+  <!-- 2. Le cadre de l'avatar -->
+  <div class="video-container">
+    <video id="avatarVideo" autoplay playsinline></video>
+    <div id="status">Connexion…</div>
+  </div>
+
+  <!-- 3. Le bouton micro -->
   <button id="micToggle" class="mic-muted">🔇 Micro coupé</button>
   <button id="audioUnlock">🔊 Audio</button>
 
   <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
   <script>
-    // ⚠️ Remplacez cette ligne par votre token frais
+    // ⚠️ Votre Token actuel est conservé ici
     const LIVEKIT_URL = "wss://test-vjsyazm0.livekit.cloud";
-    const LIVEKIT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJBUElkZHNMckpXRWtZUDUiLCJzdWIiOiJzcGVjdGF0ZXVyIiwiZXhwIjoxNzkyODM5MTAzLCJuYmYiOjE3OTI3NTI3MDMsImlhdCI6MTc5Mjc1MjcwMywiaWRlbnRpdHkiOiJzcGVjdGF0ZXVyIiwibmFtZSI6InNwZWN0YXRldXIiLCJ2aWRlbyI6eyJyb29tSm9pbiI6dHJ1ZSwicm9vbSI6Im1hLXNhbGxlLXRlc3QifX0.hHgZzKlA7u1v0uYLqWY8DPLsqbjsF7cF1t3OI7WLfqs";
+    const LIVEKIT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJBUElkZHNMckpXRWtZUDUiLCJzdWIiOiJzcGVjdGF0ZXVyIiwiZXhwIjoxNzkzMDgyOTcyLCJuYmYiOjE3OTI5OTY1NzIsImlhdCI6MTc5Mjk5NjU3MiwiaWRlbnRpdHkiOiJzcGVjdGF0ZXVyIiwibmFtZSI6InNwZWN0YXRldXIiLCJ2aWRlbyI6eyJyb29tSm9pbiI6dHJ1ZSwicm9vbSI6Im1hLXNhbGxlLXRlc3QifX0.WikyC1T5eQuNViaU1SI9KQtE1_f7ikQGMIv0wrDAVtA";
 
     const statusEl = document.getElementById("status");
     const videoEl = document.getElementById("avatarVideo");
@@ -129,7 +155,6 @@
       if (track.kind === "video") {
         track.attach(videoEl);
         statusEl.textContent = "Avatar connecté ✅";
-        // On cache le statut après 3 secondes pour faire plus propre
         setTimeout(() => { statusEl.style.opacity = "0"; }, 3000);
       }
       if (track.kind === "audio") {
@@ -149,35 +174,31 @@
       statusEl.style.opacity = "1";
     });
 
-     // Le bouton audio devient inutile (on garde juste le HTML caché)
-    // audioBtn n'est plus utilisé
-
-        // ===== Bouton micro (toggle) =====
+    // ===== Bouton micro (toggle) =====
     const micToggle = document.getElementById('micToggle');
-    let micEnabled = false;      // État actuel : micro coupé au démarrage
-    let audioUnlocked = false;   // Audio pas encore débloqué
+    let micEnabled = false;
+    let audioUnlocked = false;
 
     micToggle.addEventListener('click', async () => {
       try {
-        // --- Premier clic : débloquer l'audio ---
         if (!audioUnlocked) {
           await room.startAudio();
           audioUnlocked = true;
           statusEl.textContent = "Audio activé ✅";
         }
 
-        // --- Basculer l'état du micro ---
         micEnabled = !micEnabled;
-        await room.localParticipant.setMicrophoneEnabled(micEnabled);
+        await room.localParticipant.setMicrophoneEnabled(micEnabled, {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        });
 
-        // --- Mettre à jour le bouton ---
         if (micEnabled) {
-          // Micro activé → bouton VERT
           micToggle.textContent = '🔊 Micro actif';
           micToggle.classList.remove('mic-muted');
           micToggle.classList.add('mic-active');
         } else {
-          // Micro coupé → bouton GRIS
           micToggle.textContent = '🔇 Micro coupé';
           micToggle.classList.remove('mic-active');
           micToggle.classList.add('mic-muted');
