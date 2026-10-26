@@ -545,4 +545,14 @@ python3 --version
 
 ---
 
+### Liste des commandes
+
+uv run python src/agent.py dev
+
+lk token create --api-key APIddsLrJWEkYP5 --api-secret gVCm6t6wACEPa71zJHlZIqyLx30uxQtFXXgA17cDVlB --join --room ma-salle-test --identity spectateur --url wss://test-vjsyazm0.livekit.cloud --valid-for 24h^C
+
+lk dispatch create --agent-name customerSupport --room ma-salle-test --api-key APIddsLrJWEkYP5 --api-secret gVCm6t6wACEPa71zJHlZIqyLx30uxQtFXXgA17cDVlB --url wss://test-vjsyazm0.livekit.cloud
+
+python3 -m http.server 8000
+
 ** **
