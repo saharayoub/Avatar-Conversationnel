@@ -143,7 +143,7 @@ async def entrypoint(ctx: JobContext):
         ),
         llm=groq.LLM(
             api_key=os.getenv("GROQ_API_KEY"),
-            model="openai/gpt-oss-20b",
+            model="llama-3.3-70b-versatile",
         ),
         tts=azure.TTS(
             speech_key=os.getenv("AZURE_SPEECH_KEY"),

@@ -141,13 +141,11 @@
 
   <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
   <script>
-    // ⚠️ Votre Token actuel est conservé ici
     const LIVEKIT_URL = "wss://test-vjsyazm0.livekit.cloud";
-    const LIVEKIT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJBUElkZHNMckpXRWtZUDUiLCJzdWIiOiJzcGVjdGF0ZXVyIiwiZXhwIjoxNzkzMDgyOTcyLCJuYmYiOjE3OTI5OTY1NzIsImlhdCI6MTc5Mjk5NjU3MiwiaWRlbnRpdHkiOiJzcGVjdGF0ZXVyIiwibmFtZSI6InNwZWN0YXRldXIiLCJ2aWRlbyI6eyJyb29tSm9pbiI6dHJ1ZSwicm9vbSI6Im1hLXNhbGxlLXRlc3QifX0.WikyC1T5eQuNViaU1SI9KQtE1_f7ikQGMIv0wrDAVtA";
+    const LIVEKIT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJBUElkZHNMckpXRWtZUDUiLCJzdWIiOiJzcGVjdGF0ZXVyIiwiZXhwIjoxNzkzMTc1NzY1LCJuYmYiOjE3OTMwODkzNjUsImlhdCI6MTc5MzA4OTM2NSwiaWRlbnRpdHkiOiJzcGVjdGF0ZXVyIiwibmFtZSI6InNwZWN0YXRldXIiLCJ2aWRlbyI6eyJyb29tSm9pbiI6dHJ1ZSwicm9vbSI6Im1hLXNhbGxlLXRlc3QifX0.r0lY7lJDlx0d8b8kxdhF3BxAVxer3vxk_gyx4YXZbRg";
 
     const statusEl = document.getElementById("status");
     const videoEl = document.getElementById("avatarVideo");
-    const audioBtn = document.getElementById("audioUnlock") || { classList: { add: () => {} }, addEventListener: () => {} }
 
     const room = new LivekitClient.Room();
 
@@ -158,7 +156,9 @@
         setTimeout(() => { statusEl.style.opacity = "0"; }, 3000);
       }
       if (track.kind === "audio") {
-        track.attach();
+        // 🔥 CORRECTION ICI : On attache l'audio au DOM pour pouvoir l'entendre
+        const audioElement = track.attach();
+        document.body.appendChild(audioElement);
       }
     });
 
@@ -218,5 +218,6 @@
       }
     })();
   </script>
+
 </body>
 </html>
