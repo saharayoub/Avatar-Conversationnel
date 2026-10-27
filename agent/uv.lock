@@ -17,6 +17,7 @@ name = "agent-starter-python"
 version = "1.0.0"
 source = { editable = "." }
 dependencies = [
+    { name = "bithuman", extra = ["essence-2"] },
     { name = "livekit-agents", extra = ["azure", "bithuman", "groq", "silero", "simli"] },
     { name = "livekit-plugins-ai-coustics" },
     { name = "livekit-plugins-bithuman" },
@@ -32,6 +33,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "bithuman", extras = ["essence-2"], specifier = ">=2.12.0" },
     { name = "livekit-agents", extras = ["azure", "bithuman", "groq", "silero", "simli"], specifier = "~=1.5" },
     { name = "livekit-plugins-ai-coustics", specifier = "~=0.3" },
     { name = "livekit-plugins-bithuman", specifier = ">=1.8.4" },
@@ -411,6 +413,12 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/32/24/b2abb4d5e166343f28c04830dab0b9e70a948bf554e70aa6a0b5712c76cd/bithuman-2.12.7-cp314-cp314-manylinux_2_28_aarch64.whl", hash = "sha256:fd665e5fdc9b559c23eb51a4b03cc7f45e717aca1f05579aabf448c30565aac8", size = 21887309, upload-time = "2026-10-20T15:01:23.528Z" },
     { url = "https://files.pythonhosted.org/packages/13/94/959cfac64b32543144fc19652d889e4b26c1c058cfba020f22d7711cba98/bithuman-2.12.7-cp314-cp314-manylinux_2_28_x86_64.whl", hash = "sha256:59c037fc88b4f08e2131f4f2e9ccd6dc12ec13aed23896ac0bb38c0b18f80d51", size = 23607409, upload-time = "2026-10-20T15:01:27.385Z" },
     { url = "https://files.pythonhosted.org/packages/5f/8e/7f61333dd6ff505a0b6cd6629596ffc724c497bbfa8c9d12de2f52096b8b/bithuman-2.12.7-cp314-cp314-win_amd64.whl", hash = "sha256:91ffdf36e1b899acdf74be64c9829827436e51d96040bd54f16154ebbec6ea3a", size = 13892970, upload-time = "2026-10-20T15:01:30.869Z" },
+]
+
+[package.optional-dependencies]
+essence-2 = [
+    { name = "onnxruntime", version = "1.23.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "onnxruntime", version = "1.30.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
 ]
 
 [[package]]
