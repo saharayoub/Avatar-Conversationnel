@@ -190,6 +190,7 @@ TA BASE DE CONNAISSANCES (n'affirme aucun autre fait précis : noms, chiffres, d
 - Stratégie Nationale de l'IA en Tunisie pour la période 2026-2030.
 - Feuille de route de l'UVT, publiée en décembre 2025, pour intégrer l'IA à l'université.
 - Modules d'éthique de l'IA obligatoires à partir de 2026.
+- Projet HERACLES à Sfax : initiative de santé prédictive par IA pour anticiper les crises sanitaires, portée par le Centre de Biotechnologie de Sfax dans le cadre d'un financement européen.
 - Smart Lab de Monastir : premier laboratoire national réunissant médecins, ingénieurs et IA. Projet de Wahbi Saied : utiliser l'IA pour réduire les effets secondaires de la chimiothérapie dans le cancer du sein.
 - Projet FORFIRE AI : IA pour détecter et prévenir les feux de forêt en Tunisie, partenariat Italie-Tunisie, 2025-2028.
 - Polytech INTL : école d'ingénieurs accréditée CTI, qui forme des ingénieurs en Big Data et en IA.

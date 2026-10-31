@@ -131,7 +131,8 @@
 
   <!-- 2. Le cadre de l'avatar -->
   <div class="video-container">
-    <video id="avatarVideo" autoplay playsinline></video>
+    <!-- muted : sinon Chrome peut bloquer l'autoplay. Le son passe par un élément <audio> séparé. -->
+    <video id="avatarVideo" autoplay playsinline muted></video>
     <div id="status">Connexion…</div>
   </div>
 
@@ -141,15 +142,15 @@
 
   <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
   <script>
-    const LIVEKIT_URL = "wss://test-vjsyazm0.livekit.cloud";
-    const LIVEKIT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJBUElkZHNMckpXRWtZUDUiLCJzdWIiOiJzcGVjdGF0ZXVyIiwiZXhwIjoxNzkzMTc1NzY1LCJuYmYiOjE3OTMwODkzNjUsImlhdCI6MTc5MzA4OTM2NSwiaWRlbnRpdHkiOiJzcGVjdGF0ZXVyIiwibmFtZSI6InNwZWN0YXRldXIiLCJ2aWRlbyI6eyJyb29tSm9pbiI6dHJ1ZSwicm9vbSI6Im1hLXNhbGxlLXRlc3QifX0.r0lY7lJDlx0d8b8kxdhF3BxAVxer3vxk_gyx4YXZbRg";
-
+    // L'URL et le jeton sont fournis par agent/src/token_server.py (GET /token) :
+    // ouvrir la page via http://localhost:8080, pas en double-cliquant sur le fichier.
     const statusEl = document.getElementById("status");
     const videoEl = document.getElementById("avatarVideo");
 
     const room = new LivekitClient.Room();
 
-    room.on(LivekitClient.RoomEvent.TrackSubscribed, (track) => {
+    room.on(LivekitClient.RoomEvent.TrackSubscribed, (track, publication, participant) => {
+      console.log("piste reçue :", track.kind, "de", participant.identity);
       if (track.kind === "video") {
         track.attach(videoEl);
         statusEl.textContent = "Avatar connecté ✅";
@@ -210,7 +211,13 @@
 
     (async () => {
       try {
-        await room.connect(LIVEKIT_URL, LIVEKIT_TOKEN);
+        const res = await fetch("/token");
+        if (!res.ok) throw new Error("serveur de jetons indisponible (" + res.status + ")");
+        const { url, token, agent } = await res.json();
+        console.log("agent :", agent);
+        await room.connect(url, token);
+        console.log("connecté, participants présents :",
+          [...room.remoteParticipants.values()].map(p => p.identity));
         statusEl.textContent = "Connecté — cliquez sur le bouton micro pour commencer";
       } catch (err) {
         console.error(err);

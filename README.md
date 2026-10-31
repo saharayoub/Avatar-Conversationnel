@@ -7,6 +7,58 @@
 
 ---
 
+## 🚀 Démarrage rapide
+
+### ▶️ Lancer Amira
+
+Toutes les commandes se lancent depuis le dossier `agent/` (sous WSL).
+
+```bash
+# 0. Vérifier qu'aucune ancienne session ne traîne (attendu : "room does not exist")
+lk room participants list ma-salle-test
+
+# 1. Terminal 1 — l'agent (attendre "registered worker")
+uv run python src/agent.py dev
+
+# 2. Terminal 2 — l'interface + jeton + dispatch automatique
+uv run python src/token_server.py
+
+# 3. Navigateur
+http://localhost:8080
+```
+
+> Plus besoin de `lk token create` ni de `lk dispatch create` : le serveur de jetons s'en charge, sans jamais créer de deuxième Amira.
+
+### ⏹️ Arrêter proprement (éviter les sessions fantômes)
+
+**Arrêt normal**, dans cet ordre :
+
+```bash
+# 1. Fermer l'onglet du navigateur
+# 2. Terminal 1 : Ctrl+C UNE seule fois, attendre que l'agent rende la main
+# 3. Supprimer la salle (libère l'agent et l'avatar côté LiveKit Cloud)
+lk room delete ma-salle-test
+# 4. Terminal 2 : Ctrl+C
+```
+
+**Après un arrêt brutal** (terminal fermé, plantage, mise en veille du PC, double Ctrl+C) :
+
+```bash
+lk room participants list ma-salle-test   # un "agent-..." ou "bithuman-avatar-agent" reste ?
+lk room delete ma-salle-test              # alors supprimer la salle avant de relancer
+```
+
+**Bonnes pratiques**
+
+- ✅ Toujours **vérifier la salle avant de lancer** (étape 0).
+- ✅ Après **chaque modification du code** : arrêter l'agent, `lk room delete ma-salle-test`, relancer (pas de rechargement automatique).
+- ✅ Lancer l'agent **avant** d'ouvrir la page.
+- ❌ Ne jamais lancer **deux agents** en même temps (deux terminaux `agent.py`).
+- ❌ Ne pas faire de `lk dispatch create` à la main : le serveur de jetons le fait déjà.
+- 💡 Une salle oubliée continue de **consommer des crédits** bitHuman et LiveKit : la supprimer après chaque test.
+
+---
+
 ## 📑 Table des matières
 
 - [1. Présentation](#1-présentation)
@@ -547,12 +599,6 @@ python3 --version
 
 ### Liste des commandes
 
-uv run python src/agent.py dev
-
-lk token create --api-key APIddsLrJWEkYP5 --api-secret gVCm6t6wACEPa71zJHlZIqyLx30uxQtFXXgA17cDVlB --join --room ma-salle-test --identity spectateur --url wss://test-vjsyazm0.livekit.cloud --valid-for 24h^C
-
-lk dispatch create --agent-name customerSupport --room ma-salle-test --api-key APIddsLrJWEkYP5 --api-secret gVCm6t6wACEPa71zJHlZIqyLx30uxQtFXXgA17cDVlB --url wss://test-vjsyazm0.livekit.cloud
-
-python3 -m http.server 8000
+Voir la section [🚀 Démarrage rapide](#-démarrage-rapide) en haut de ce document.
 
 ** **
