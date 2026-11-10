@@ -229,6 +229,47 @@ class AmiraWaiting(Agent):
         self._task = asyncio.create_task(self._run_conference())
         return "started"
 
+    async def stop_conference(self) -> str:
+        """Arrête la conférence et remet Amira en attente."""
+        if self._task and not self._task.done():
+            self._task.cancel()
+        self._started = False
+        self._task = None
+        # On remet l'agent en mode attente
+        self.session.update_agent(AmiraWaiting(self._script))
+        logger.info("conférence arrêtée par l'opérateur")
+        return "stopped"
+
+    async def skip_to_qa(self) -> str:
+        """Passe directement au mode questions en arrêtant la conférence."""
+        logger.info("passage direct aux questions par l'opérateur")
+        
+        # 1. On annule la tâche de conférence
+        if self._task and not self._task.done():
+            self._task.cancel()
+            
+        self._task = None
+        self._started = False
+        
+        # ⚠️ ON NE FAIT RIEN D'AUTRE ICI.
+        # L'annulation déclenche le bloc 'finally' de _run_conference 
+        # qui fera le update_agent(AmiraQA()) tout seul.
+        
+        return "skipped"
+
+    async def greet(self) -> str:
+        """Force Amira à dire bonjour (si le micro a raté)."""
+        self.session.say(GREETING_REPLY, allow_interruptions=False, add_to_chat_ctx=False)
+        return "greeted"
+
+    async def end_session(self) -> str:
+        """Force la fermeture de la session et libère la salle."""
+        logger.info("clôture forcée de la session par l'opérateur")
+        if self._task and not self._task.done():
+            self._task.cancel()
+        asyncio.create_task(self.session.aclose())
+        return "session_closed"
+
     async def on_user_turn_completed(
         self, turn_ctx: lk_llm.ChatContext, new_message: lk_llm.ChatMessage
     ) -> None:
@@ -369,10 +410,26 @@ async def entrypoint(ctx: JobContext):
 
     await ctx.connect()
 
-    # Déclencheur de secours pour l'opérateur (bouton dans le frontend, par exemple).
+        # Déclencheur de secours pour l'opérateur
     @ctx.room.local_participant.register_rpc_method("amira.start_conference")
     async def _rpc_start_conference(data: rtc.RpcInvocationData) -> str:
         return waiting_agent.start_conference(source=f"rpc:{data.caller_identity}")
+
+    @ctx.room.local_participant.register_rpc_method("amira.greet")
+    async def _rpc_greet(data: rtc.RpcInvocationData) -> str:
+        return await waiting_agent.greet()
+
+    @ctx.room.local_participant.register_rpc_method("amira.stop_conference")
+    async def _rpc_stop(data: rtc.RpcInvocationData) -> str:
+        return await waiting_agent.stop_conference()
+
+    @ctx.room.local_participant.register_rpc_method("amira.skip_to_qa")
+    async def _rpc_skip_qa(data: rtc.RpcInvocationData) -> str:
+        return await waiting_agent.skip_to_qa()
+
+    @ctx.room.local_participant.register_rpc_method("amira.end_session")
+    async def _rpc_end(data: rtc.RpcInvocationData) -> str:
+        return await waiting_agent.end_session()
 
 
 if __name__ == "__main__":

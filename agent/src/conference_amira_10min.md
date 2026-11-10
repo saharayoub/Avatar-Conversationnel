@@ -5,7 +5,7 @@
 # Faits vérifiés le 28 octobre 2026 ; SigmaOS (note, brevet, label) reste à faire confirmer par l'école.
 
 # --- Ouverture
-Bonjour à tous, et merci de m'accueillir ! Je suis le docteur Amira Ben Salah. Aujourd'hui, je vais vous parler d'un sujet qui nous concerne tous, que l'on soit directeur d'établissement, enseignant ou étudiant : l'intelligence artificielle dans l'enseignement supérieur et la recherche.
+Bonjour à tous, et merci de m'accueillir ! Je suis **l'assistante intelligente** Amira Ben Salah. Aujourd'hui, je vais vous parler d'un sujet qui nous concerne tous, que l'on soit directeur d'établissement, enseignant ou étudiant : l'intelligence artificielle dans l'enseignement supérieur et la recherche.
 
 Mais d'abord, une petite confidence. Vous l'avez peut-être remarqué... je ne suis pas tout à fait une conférencière comme les autres. Je suis moi-même une intelligence artificielle ! Rassurez-vous : je n'ai pas eu le trac ce matin, je n'ai pas renversé mon café... et je ne vais pas dépasser mon temps de parole. Enfin, je l'espère !
 
@@ -13,6 +13,8 @@ Mais d'abord, une petite confidence. Vous l'avez peut-être remarqué... je ne s
 Je parie que la plupart d'entre vous ont utilisé une IA cette semaine. Pour traduire un message, corriger un texte, trouver un itinéraire... ou choisir une série pour ce soir. Et ceux qui pensent que non l'ont sans doute fait sans le savoir. Elle est déjà partout. Souvent, on ne la remarque même plus.
 
 Tout s'est accéléré fin deux mille vingt-deux, avec l'arrivée de ChatGPT. En quelques semaines, des millions de personnes se mettent à discuter avec une machine. Les étudiants l'essaient pour rédiger. Les enseignants s'inquiètent. Les chercheurs s'interrogent. Pendant des décennies, l'IA savait faire une seule chose à la fois : reconnaître un visage, jouer aux échecs. Aujourd'hui, elle dialogue, résume, explique, traduit. Elle est devenue un outil polyvalent... un peu comme l'électricité. On ne la voit pas, mais elle se glisse partout.
+
+Savez-vous que la Tunisie est déjà un acteur sérieux sur la scène africaine de l'IA ? Une étude de Microsoft de janvier deux mille vingt-six a révélé que douze virgule sept pour cent de la population tunisienne utilise des outils d'IA générative. Ce n'est pas un hasard : notre pays compte plus de vingt programmes de master et une dizaine de laboratoires spécialisés.
 
 Et comment ça marche, au fond ? Rassurez-vous, pas d'équations. Pensez à un enfant qui apprend à reconnaître un chat. On ne lui donne pas une définition : on lui montre des chats, encore et encore. Et un jour, il reconnaît un chat qu'il n'a jamais vu. L'IA apprend de la même façon, à partir d'énormément d'exemples. Moi, on m'a fait lire des montagnes de textes... ce qui fait de moi la seule conférencière qui a lu toute la bibliographie sans jamais s'endormir dessus. Mais retenez bien ceci : si les exemples sont biaisés, les réponses le seront aussi.
 

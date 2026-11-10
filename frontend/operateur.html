@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Console Opérateur - Amira</title>
+    <style>
+        body { font-family: 'Inter', system-ui, sans-serif; background: #1e293b; color: white; padding: 40px; text-align: center; }
+        h1 { margin-bottom: 40px; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 800px; margin: 0 auto; }
+        button {
+            padding: 20px; font-size: 16px; font-weight: 600; border: none; border-radius: 12px; cursor: pointer; transition: transform 0.2s; width: 100%;
+        }
+        button:active { transform: scale(0.95); }
+        .btn-greet { background-color: #8b5cf6; color: white; }
+        .btn-start { background-color: #10b981; color: white; grid-column: span 2; } /* Bouton large */
+        .btn-stop { background-color: #f59e0b; color: white; }
+        .btn-skip { background-color: #3b82f6; color: white; }
+        .btn-end { background-color: #ef4444; color: white; grid-column: span 2; } /* Bouton large */
+        #log { margin-top: 40px; font-size: 14px; color: #94a3b8; background: #0f172a; padding: 20px; border-radius: 8px; text-align: left; }
+    </style>
+</head>
+<body>
+    <h1>Console Opérateur - Amira</h1>
+    
+    <div class="grid">
+        <button id="btnGreet" class="btn-greet">🗣 Simuler "Bonjour"</button>
+        <button id="btnStart" class="btn-start">▶ Démarrer la conférence (à vous la parole)</button>
+        <button id="btnStop" class="btn-stop">⏹ Arrêter le speech</button>
+        <button id="btnSkip" class="btn-skip">⏭ Passer aux questions</button>
+        <button id="btnEnd" class="btn-end">🛑 Clôturer la session (libérer les ressources)</button>
+    </div>
+
+    <div id="log">En attente de connexion...</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
+    <script>
+        const logEl = document.getElementById("log");
+        const room = new LivekitClient.Room();
+
+        function log(msg) {
+            console.log(msg);
+            logEl.innerText = msg;
+        }
+
+        async function sendRPC(method) {
+            try {
+                // 1. On cherche l'agent (son identité commence par "agent-")
+                const agent = Array.from(room.remoteParticipants.values()).find(
+                    p => p.identity.startsWith("agent-")
+                );
+
+                if (!agent) {
+                    log("Erreur : l'agent n'est pas dans la salle. Vérifie que l'avatar est bien affiché sur l'autre onglet.");
+                    return;
+                }
+
+                log(`Envoi de la commande ${method} à ${agent.identity}...`);
+                
+                // 2. On envoie la commande
+                const rpcResponse = await room.localParticipant.performRpc({
+                    destinationIdentity: agent.identity,
+                    method: method,
+                    payload: "",
+                });
+                
+                log(`Succès : ${rpcResponse}`);
+            } catch (e) {
+                log(`Erreur : ${e.message}`);
+            }
+        }
+
+        // Les 5 boutons
+        document.getElementById("btnGreet").onclick = () => sendRPC("amira.greet");
+        document.getElementById("btnStart").onclick = () => sendRPC("amira.start_conference");
+        document.getElementById("btnStop").onclick = () => sendRPC("amira.stop_conference");
+        document.getElementById("btnSkip").onclick = () => sendRPC("amira.skip_to_qa");
+        document.getElementById("btnEnd").onclick = () => sendRPC("amira.end_session");
+
+        (async () => {
+            try {
+                // ✅ On récupère le token de la même façon que index.html
+                const res = await fetch("/token");
+                if (!res.ok) throw new Error("serveur de jetons indisponible (" + res.status + ")");
+                const { url, token } = await res.json();
+                
+                await room.connect(url, token);
+                log("Connecté au serveur. Prêt à envoyer des commandes.");
+            } catch (err) {
+                log("Erreur de connexion : " + err.message);
+            }
+        })();
+    </script>
+</body>
+</html>
