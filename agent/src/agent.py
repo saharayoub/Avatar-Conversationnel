@@ -3,25 +3,30 @@ Amira - conférencière virtuelle (LiveKit Agents + bitHuman).
 
 Machine à états simple et déterministe :
 
-    ATTENTE  --(déclencheur "à vous la parole")-->  CONFÉRENCE  --(fin du script)-->  QUESTIONS
-              (silence, ignore tout le reste)        (script lu, non interruptible)    (LLM, interactif)
+    ATTENTE  --("à vous la parole")-->  CONFÉRENCE  --(fin du script)-->  QUESTIONS
+    (silence)                           (script, non interruptible)       (LLM, interactif)
 
-- Le déclencheur est détecté par le CODE (expressions régulières sur la transcription),
+    QUESTIONS  --("place à Sahar")-->  PAUSE  --("Amira, je vous laisse conclure")-->  CONCLUSION
+                                       (écoute, ne répond jamais)                       (script, puis silence)
+
+- Les déclencheurs sont détectés par le CODE (expressions régulières sur la transcription),
   pas par le LLM : pas de faux départ, pas de silence si le LLM ne suit pas la consigne.
-- La conférence est un SCRIPT écrit à l'avance (conference_amira.md), lu par le TTS
+- La conférence et la conclusion sont des SCRIPTS écrits à l'avance (.md), lus par le TTS
   paragraphe par paragraphe : durée maîtrisée, aucun risque d'invention ni de coupure LLM.
 - Le LLM ne sert qu'à la session de questions-réponses.
-- Un opérateur peut aussi lancer la conférence par RPC ("amira.start_conference") en secours.
+- Chaque transition a aussi un bouton de secours dans la console opérateur (RPC "amira.*").
+- Après la conclusion, Amira reste silencieuse pendant le débat.
 """
 
 import asyncio
+import contextlib
 import difflib
 import logging
-import time
-from collections import deque
 import os
 import re
+import time
 import unicodedata
+from collections import deque
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -51,7 +56,10 @@ logger = logging.getLogger("amira")
 
 AGENT_NAME = os.getenv("AGENT_NAME", "customerSupport")  # à terme : livekit.toml ([agent] name)
 # Choix du script via .env.local : CONFERENCE_SCRIPT=conference_amira_court.md pour un test rapide.
-SCRIPT_PATH = SRC_DIR / os.getenv("CONFERENCE_SCRIPT", "conference_amira_court.md")
+# Par défaut : la version 10 minutes, celle de l'atelier inaugural.
+SCRIPT_PATH = SRC_DIR / os.getenv("CONFERENCE_SCRIPT", "conference_amira_10min.md")
+# Conclusion lue après l'intervention de Sahar, juste avant le débat.
+CONCLUSION_PATH = SRC_DIR / os.getenv("CONCLUSION_SCRIPT", "conclusion_amira.md")
 
 # Débit de la voix : 1.0 = débit normal d'Azure. 0.9 = 10 % plus posé, confortable pour une salle.
 # Accepte aussi "slow", "medium"... Réglable sans toucher au code : AZURE_TTS_RATE=0.88
@@ -117,18 +125,22 @@ CANONICAL_TRIGGERS = [
 FUZZY_THRESHOLD = 0.88
 
 
-def _fuzzy_trigger(norm: str) -> bool:
+def _fuzzy_match(norm: str, phrases: list[str], threshold: float = FUZZY_THRESHOLD) -> bool:
     words = norm.split()
-    for phrase in CANONICAL_TRIGGERS:
+    for phrase in phrases:
         n = len(phrase.split())
         for size in (n - 1, n, n + 1):  # un mot coupé ou fusionné par le STT
             if size < 2:
                 continue
             for i in range(0, max(1, len(words) - size + 1)):
                 window = " ".join(words[i:i + size])
-                if difflib.SequenceMatcher(None, window, phrase).ratio() >= FUZZY_THRESHOLD:
+                if difflib.SequenceMatcher(None, window, phrase).ratio() >= threshold:
                     return True
     return False
+
+
+def _fuzzy_trigger(norm: str) -> bool:
+    return _fuzzy_match(norm, CANONICAL_TRIGGERS)
 
 
 # Annonce d'une prise de parole À VENIR : jamais un déclencheur.
@@ -149,6 +161,52 @@ def is_greeting_to_amira(text: str) -> bool:
     return bool(GREETING_PATTERN.search(normalize(text)))
 
 
+# QUESTIONS -> PAUSE : on passe la parole à Sahar.
+# Le STT peut écrire "Sahar", "Sahara", "Sarah" ou "Sara" : on accepte les quatre.
+_SAHAR = r"(?:sahar\w*|sarah?)"
+PAUSE_PATTERNS = [
+    re.compile(p)
+    for p in (
+        rf"\b(la parole|place) (est )?a {_SAHAR}\b",  # "place à Sahar", "je passe la parole à Sahar"
+        rf"\b(a vous|c est a vous|a toi|c est a toi) {_SAHAR}\b",
+        rf"\b{_SAHAR} (a vous|a toi|vous avez la parole|la parole est a (vous|toi))\b",
+    )
+]
+
+
+def is_pause_trigger(text: str) -> bool:
+    norm = normalize(text)
+    if FUTURE_MARKERS.search(norm):
+        return False
+    return any(p.search(norm) for p in PAUSE_PATTERNS)
+
+
+# PAUSE -> CONCLUSION : Sahar rend la parole à Amira pour conclure.
+# Volontairement strict : "pour conclure" seul (fréquent dans un exposé) ne déclenche PAS.
+_HANDOVER_VERB = r"(je|on|nous) (vous|te) (laisse|laissons|cede|cedons|donne|donnons|passe|passons)"
+CONCLUSION_PATTERNS = [
+    re.compile(p)
+    for p in (
+        rf"\b{_HANDOVER_VERB} (le soin de )?(conclure|la conclusion|le mot de la fin)\b",
+        r"\ba (vous|toi) de conclure\b",
+        r"\b(le mot de la fin|la conclusion) (revient )?a amira\b",
+        r"\bamira (concluez|conclus|vous pouvez conclure|tu peux conclure)\b",
+    )
+]
+CANONICAL_CONCLUSION = ["je vous laisse conclure", "a vous de conclure"]
+# Seuil plus strict : "je vous laisse continuer" ne doit pas passer pour "conclure".
+CONCLUSION_FUZZY_THRESHOLD = 0.92
+
+
+def is_conclusion_trigger(text: str) -> bool:
+    norm = normalize(text)
+    if FUTURE_MARKERS.search(norm):
+        return False
+    return any(p.search(norm) for p in CONCLUSION_PATTERNS) or _fuzzy_match(
+        norm, CANONICAL_CONCLUSION, CONCLUSION_FUZZY_THRESHOLD
+    )
+
+
 # --------------------------------------------------------------------------
 # Script de la conférence
 # --------------------------------------------------------------------------
@@ -164,11 +222,26 @@ def load_script(path: Path) -> list[str]:
 
 
 CONFERENCE_SCRIPT = load_script(SCRIPT_PATH)
-_words = sum(len(p.split()) for p in CONFERENCE_SCRIPT)
-logger.info(
-    "script chargé : %d paragraphes, %d mots, durée estimée ~%.1f min",
-    len(CONFERENCE_SCRIPT), _words, _words / WORDS_PER_MINUTE,
-)
+CONCLUSION_SCRIPT = load_script(CONCLUSION_PATH)
+for _name, _script in (("conférence", CONFERENCE_SCRIPT), ("conclusion", CONCLUSION_SCRIPT)):
+    _words = sum(len(p.split()) for p in _script)
+    logger.info(
+        "%s chargée : %d paragraphes, %d mots, durée estimée ~%.1f min",
+        _name, len(_script), _words, _words / WORDS_PER_MINUTE,
+    )
+
+
+async def read_script(session: AgentSession, paragraphs: list[str], label: str) -> None:
+    """Lit un script paragraphe par paragraphe, sans interruption possible par la salle."""
+    total = len(paragraphs)
+    for i, paragraph in enumerate(paragraphs, start=1):
+        logger.info("%s : paragraphe %d/%d", label, i, total)
+        try:
+            await session.say(paragraph, allow_interruptions=False, add_to_chat_ctx=False)
+        except Exception:
+            # Une erreur TTS ponctuelle ne doit pas arrêter toute la lecture.
+            logger.exception("%s : échec du paragraphe %d, on passe au suivant", label, i)
+        await asyncio.sleep(PAUSE_BETWEEN_PARAGRAPHS_S)
 
 # --------------------------------------------------------------------------
 # Prompt de la session de questions
@@ -207,7 +280,7 @@ QUAND TU NE SAIS PAS :
 # Agents
 # --------------------------------------------------------------------------
 class AmiraWaiting(Agent):
-    """Amira attend qu'on lui donne la parole, puis déroule la conférence."""
+    """ATTENTE puis CONFÉRENCE : Amira attend qu'on lui donne la parole, puis lit le script."""
 
     def __init__(self, script: list[str]) -> None:
         super().__init__(
@@ -216,59 +289,56 @@ class AmiraWaiting(Agent):
         self._script = script
         self._started = False
         self._task: asyncio.Task | None = None
+        # État suivant quand la conférence se termine ou est annulée :
+        # "qa" (normal ou "passer aux questions"), "waiting" (arrêt opérateur), "none" (clôture).
+        self._after = "qa"
         # Derniers fragments entendus : "Amira..." puis "...à vous la parole" peuvent
         # arriver en deux tours si l'animateur marque une pause.
         self._recent: deque[tuple[float, str]] = deque(maxlen=3)
+
+    def _conference_running(self) -> bool:
+        return self._task is not None and not self._task.done()
+
+    def _cancel_conference(self, after: str) -> None:
+        self._after = after
+        if self._task and not self._task.done():
+            self._task.cancel()
+        # Coupe aussi la phrase en cours de lecture (sinon elle irait jusqu'au bout).
+        with contextlib.suppress(RuntimeError):
+            self.session.interrupt(force=True)
 
     def start_conference(self, source: str) -> str:
         """Point d'entrée unique (voix ou RPC). Idempotent."""
         if self._started:
             return "already_started"
         self._started = True
+        self._after = "qa"
         logger.info("déclenchement de la conférence (source=%s)", source)
         self._task = asyncio.create_task(self._run_conference())
         return "started"
 
-    async def stop_conference(self) -> str:
+    def stop_conference(self) -> str:
         """Arrête la conférence et remet Amira en attente."""
-        if self._task and not self._task.done():
-            self._task.cancel()
-        self._started = False
-        self._task = None
-        # On remet l'agent en mode attente
-        self.session.update_agent(AmiraWaiting(self._script))
+        if not self._conference_running():
+            self._started = False
+            return "not_running"
         logger.info("conférence arrêtée par l'opérateur")
+        self._cancel_conference(after="waiting")
         return "stopped"
 
-    async def skip_to_qa(self) -> str:
-        """Passe directement au mode questions en arrêtant la conférence."""
+    def skip_to_qa(self) -> str:
+        """Passe directement au mode questions."""
         logger.info("passage direct aux questions par l'opérateur")
-        
-        # 1. On annule la tâche de conférence
-        if self._task and not self._task.done():
-            self._task.cancel()
-            
-        self._task = None
-        self._started = False
-        
-        # ⚠️ ON NE FAIT RIEN D'AUTRE ICI.
-        # L'annulation déclenche le bloc 'finally' de _run_conference 
-        # qui fera le update_agent(AmiraQA()) tout seul.
-        
+        if self._conference_running():
+            self._cancel_conference(after="qa")  # le bloc finally fera la transition
+        else:
+            self._started = True
+            self.session.update_agent(AmiraQA())
         return "skipped"
 
-    async def greet(self) -> str:
-        """Force Amira à dire bonjour (si le micro a raté)."""
-        self.session.say(GREETING_REPLY, allow_interruptions=False, add_to_chat_ctx=False)
-        return "greeted"
-
-    async def end_session(self) -> str:
-        """Force la fermeture de la session et libère la salle."""
-        logger.info("clôture forcée de la session par l'opérateur")
-        if self._task and not self._task.done():
-            self._task.cancel()
-        asyncio.create_task(self.session.aclose())
-        return "session_closed"
+    def cancel_for_shutdown(self) -> None:
+        if self._conference_running():
+            self._cancel_conference(after="none")
 
     async def on_user_turn_completed(
         self, turn_ctx: lk_llm.ChatContext, new_message: lk_llm.ChatMessage
@@ -291,27 +361,20 @@ class AmiraWaiting(Agent):
         raise StopResponse()
 
     async def _run_conference(self) -> None:
-        total = len(self._script)
         try:
-            for i, paragraph in enumerate(self._script, start=1):
-                logger.info("conférence : paragraphe %d/%d", i, total)
-                try:
-                    handle = self.session.say(
-                        paragraph, allow_interruptions=False, add_to_chat_ctx=False
-                    )
-                    await handle
-                except Exception:
-                    # Une erreur TTS ponctuelle ne doit pas arrêter toute la conférence.
-                    logger.exception("échec du paragraphe %d, on passe au suivant", i)
-                await asyncio.sleep(PAUSE_BETWEEN_PARAGRAPHS_S)
+            await read_script(self.session, self._script, "conférence")
         finally:
-            logger.info("conférence terminée, passage en mode questions")
-            # Nouvel agent = nouvelles instructions + historique vierge.
-            self.session.update_agent(AmiraQA())
+            if self._after == "qa":
+                logger.info("conférence terminée, passage en mode questions")
+                # Nouvel agent = nouvelles instructions + historique vierge.
+                self.session.update_agent(AmiraQA())
+            elif self._after == "waiting":
+                logger.info("retour en attente")
+                self.session.update_agent(AmiraWaiting(self._script))
 
 
 class AmiraQA(Agent):
-    """Session de questions-réponses."""
+    """QUESTIONS : session de questions-réponses (seul état où le LLM parle)."""
 
     def __init__(self) -> None:
         super().__init__(instructions=QA_PROMPT)
@@ -321,9 +384,62 @@ class AmiraQA(Agent):
     ) -> None:
         text = new_message.text_content or ""
         logger.info("question : %r", text)
+        # "Place à Sahar" : on passe en pause au lieu de répondre.
+        if is_pause_trigger(text):
+            logger.info("passage en pause (source=voice)")
+            self.session.update_agent(AmiraPause())
+            raise StopResponse()
         # Ignore les fragments vides ou le bruit transcrit en une lettre.
         if len(normalize(text)) < 2:
             raise StopResponse()
+
+
+class AmiraPause(Agent):
+    """PAUSE : Sahar présente le projet. Amira écoute sans jamais répondre,
+    et guette seulement la phrase qui lui rend la parole pour conclure."""
+
+    def __init__(self) -> None:
+        super().__init__(instructions="Tu es Amira. Sahar parle : tu restes silencieuse.")
+        self._recent: deque[tuple[float, str]] = deque(maxlen=3)
+
+    async def on_user_turn_completed(
+        self, turn_ctx: lk_llm.ChatContext, new_message: lk_llm.ChatMessage
+    ) -> None:
+        text = new_message.text_content or ""
+        logger.info("entendu (pause) : %r", text)
+        now = time.monotonic()
+        self._recent.append((now, text))
+        joined = " ".join(t for ts, t in self._recent if now - ts <= 6.0)
+        if is_conclusion_trigger(text) or is_conclusion_trigger(joined):
+            logger.info("déclenchement de la conclusion (source=voice)")
+            self.session.update_agent(AmiraConclusion(CONCLUSION_SCRIPT))
+        raise StopResponse()
+
+
+class AmiraConclusion(Agent):
+    """CONCLUSION : lit le script de conclusion, puis reste silencieuse pendant le débat."""
+
+    def __init__(self, script: list[str]) -> None:
+        super().__init__(instructions="Tu es Amira. Tu as conclu : tu restes silencieuse.")
+        self._script = script
+        self._task: asyncio.Task | None = None
+
+    async def on_enter(self) -> None:
+        self._task = asyncio.create_task(self._run())
+
+    async def _run(self) -> None:
+        await read_script(self.session, self._script, "conclusion")
+        logger.info("conclusion terminée : Amira reste silencieuse pendant le débat")
+
+    def cancel_for_shutdown(self) -> None:
+        if self._task and not self._task.done():
+            self._task.cancel()
+
+    async def on_user_turn_completed(
+        self, turn_ctx: lk_llm.ChatContext, new_message: lk_llm.ChatMessage
+    ) -> None:
+        logger.info("entendu (conclusion/débat) : %r", new_message.text_content or "")
+        raise StopResponse()
 
 
 # --------------------------------------------------------------------------
@@ -364,7 +480,8 @@ async def entrypoint(ctx: JobContext):
                 "Amira", "Amira Ben Salah", "à vous la parole", "la parole est à vous",
                 "Polytech INTL", "SigmaOS", "Eya Boudhoukhane", "UVT", "FORFIRE",
                 "Smart Lab", "Monastir", "céphalométrie", "maxillofacial",
-                "intelligence artificielle",
+                "intelligence artificielle", "Sahar", "place à Sahar",
+                "je vous laisse conclure", "à vous de conclure",
             ],
         ),
         llm=build_llm(),
@@ -396,10 +513,8 @@ async def entrypoint(ctx: JobContext):
     )
     await avatar.start(session, room=ctx.room)
 
-    waiting_agent = AmiraWaiting(CONFERENCE_SCRIPT)
-
     await session.start(
-        agent=waiting_agent,
+        agent=AmiraWaiting(CONFERENCE_SCRIPT),
         room=ctx.room,
         room_options=room_io.RoomOptions(
             close_on_disconnect=False,
@@ -410,26 +525,70 @@ async def entrypoint(ctx: JobContext):
 
     await ctx.connect()
 
-        # Déclencheur de secours pour l'opérateur
-    @ctx.room.local_participant.register_rpc_method("amira.start_conference")
+    # ----- Boutons de secours de la console opérateur -----
+    # Chaque commande agit sur l'état COURANT d'Amira (session.current_agent) :
+    # après un changement d'état, l'ancien objet agent n'est plus utilisable.
+    lp = ctx.room.local_participant
+
+    @lp.register_rpc_method("amira.start_conference")
     async def _rpc_start_conference(data: rtc.RpcInvocationData) -> str:
-        return waiting_agent.start_conference(source=f"rpc:{data.caller_identity}")
+        agent = session.current_agent
+        if not isinstance(agent, AmiraWaiting):
+            return "refusé : Amira n'est pas en attente"
+        return agent.start_conference(source=f"rpc:{data.caller_identity}")
 
-    @ctx.room.local_participant.register_rpc_method("amira.greet")
+    @lp.register_rpc_method("amira.greet")
     async def _rpc_greet(data: rtc.RpcInvocationData) -> str:
-        return await waiting_agent.greet()
+        session.say(GREETING_REPLY, allow_interruptions=False, add_to_chat_ctx=False)
+        return "greeted"
 
-    @ctx.room.local_participant.register_rpc_method("amira.stop_conference")
+    @lp.register_rpc_method("amira.stop_conference")
     async def _rpc_stop(data: rtc.RpcInvocationData) -> str:
-        return await waiting_agent.stop_conference()
+        agent = session.current_agent
+        if not isinstance(agent, AmiraWaiting):
+            return "refusé : aucune conférence en cours"
+        return agent.stop_conference()
 
-    @ctx.room.local_participant.register_rpc_method("amira.skip_to_qa")
+    @lp.register_rpc_method("amira.skip_to_qa")
     async def _rpc_skip_qa(data: rtc.RpcInvocationData) -> str:
-        return await waiting_agent.skip_to_qa()
+        agent = session.current_agent
+        if not isinstance(agent, AmiraWaiting):
+            return "refusé : Amira n'est plus en attente ni en conférence"
+        return agent.skip_to_qa()
 
-    @ctx.room.local_participant.register_rpc_method("amira.end_session")
+    @lp.register_rpc_method("amira.pause")
+    async def _rpc_pause(data: rtc.RpcInvocationData) -> str:
+        agent = session.current_agent
+        if isinstance(agent, AmiraPause):
+            return "already_paused"
+        if not isinstance(agent, AmiraQA):
+            return "refusé : la pause se lance depuis le mode questions"
+        logger.info("passage en pause (source=rpc:%s)", data.caller_identity)
+        session.update_agent(AmiraPause())
+        return "paused"
+
+    @lp.register_rpc_method("amira.conclusion")
+    async def _rpc_conclusion(data: rtc.RpcInvocationData) -> str:
+        agent = session.current_agent
+        if isinstance(agent, AmiraConclusion):
+            return "already_started"
+        # Depuis la pause (cas normal) ou les questions (si la pause a été oubliée).
+        if not isinstance(agent, AmiraPause | AmiraQA):
+            return "refusé : la conclusion se lance après la conférence"
+        logger.info("déclenchement de la conclusion (source=rpc:%s)", data.caller_identity)
+        session.interrupt(force=True)  # coupe une éventuelle réponse en cours
+        session.update_agent(AmiraConclusion(CONCLUSION_SCRIPT))
+        return "started"
+
+    @lp.register_rpc_method("amira.end_session")
     async def _rpc_end(data: rtc.RpcInvocationData) -> str:
-        return await waiting_agent.end_session()
+        logger.info("clôture forcée de la session par l'opérateur")
+        agent = session.current_agent
+        if isinstance(agent, AmiraWaiting | AmiraConclusion):
+            agent.cancel_for_shutdown()
+        # Fermeture en arrière-plan : la réponse RPC doit partir avant la déconnexion.
+        ctx.proc.userdata["closing_task"] = asyncio.create_task(session.aclose())
+        return "session_closed"
 
 
 if __name__ == "__main__":

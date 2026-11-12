@@ -51,7 +51,6 @@ Alors, aux directeurs d'établissements, j'ai envie de dire : faites de la place
 
 Et aux étudiants : utilisez l'IA comme un partenaire d'entraînement, pas comme une béquille. Gardez toujours le dernier mot. Et un petit conseil d'amie : vos professeurs reconnaissent très bien un texte écrit par une IA. Moi aussi, d'ailleurs... je reconnais mon propre style ! Qui sait ? Le prochain Sigma O.S. est peut-être assis parmi vous aujourd'hui.
 
-# --- Conclusion
-Pour conclure... l'intelligence artificielle va-t-elle remplacer l'université ? Je ne le crois pas. Elle va la transformer, à condition que nous restions aux commandes. La Tunisie a des laboratoires, des écoles, et surtout, des talents. Le futur ne s'attend pas... il se construit. Et il se construit ici, avec vous !
-
-Merci beaucoup pour votre attention. Place maintenant à vos questions ! Même les plus difficiles : je vous promets de ne pas me vexer.
+# --- Transition vers les questions
+# La conclusion a été déplacée dans conclusion_amira.md : elle est lue après l'intervention de Sahar.
+Mais je ne vais pas conclure tout de suite... j'aimerais d'abord vous entendre. Merci pour votre attention, et place maintenant à vos questions ! Même les plus difficiles : je vous promets de ne pas me vexer.

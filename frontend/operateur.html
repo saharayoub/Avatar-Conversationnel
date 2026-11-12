@@ -15,6 +15,8 @@
         .btn-start { background-color: #10b981; color: white; grid-column: span 2; } /* Bouton large */
         .btn-stop { background-color: #f59e0b; color: white; }
         .btn-skip { background-color: #3b82f6; color: white; }
+        .btn-pause { background-color: #64748b; color: white; }
+        .btn-conclusion { background-color: #0ea5e9; color: white; }
         .btn-end { background-color: #ef4444; color: white; grid-column: span 2; } /* Bouton large */
         #log { margin-top: 40px; font-size: 14px; color: #94a3b8; background: #0f172a; padding: 20px; border-radius: 8px; text-align: left; }
     </style>
@@ -27,6 +29,8 @@
         <button id="btnStart" class="btn-start">▶ Démarrer la conférence (à vous la parole)</button>
         <button id="btnStop" class="btn-stop">⏹ Arrêter le speech</button>
         <button id="btnSkip" class="btn-skip">⏭ Passer aux questions</button>
+        <button id="btnPause" class="btn-pause">⏸ Pause (intervention Sahar)</button>
+        <button id="btnConclusion" class="btn-conclusion">🎬 Conclusion</button>
         <button id="btnEnd" class="btn-end">🛑 Clôturer la session (libérer les ressources)</button>
     </div>
 
@@ -69,11 +73,13 @@
             }
         }
 
-        // Les 5 boutons
+        // Les 7 boutons
         document.getElementById("btnGreet").onclick = () => sendRPC("amira.greet");
         document.getElementById("btnStart").onclick = () => sendRPC("amira.start_conference");
         document.getElementById("btnStop").onclick = () => sendRPC("amira.stop_conference");
         document.getElementById("btnSkip").onclick = () => sendRPC("amira.skip_to_qa");
+        document.getElementById("btnPause").onclick = () => sendRPC("amira.pause");
+        document.getElementById("btnConclusion").onclick = () => sendRPC("amira.conclusion");
         document.getElementById("btnEnd").onclick = () => sendRPC("amira.end_session");
 
         (async () => {
